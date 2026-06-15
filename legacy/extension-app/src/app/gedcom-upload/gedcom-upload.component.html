@@ -1,0 +1,73 @@
+<article class="page">
+  <section class="hero">
+    <p class="eyebrow">Step 1</p>
+    <h2>Upload a GEDCOM file</h2>
+    <p>
+      The extension stores a normalized copy locally, then uses that graph later to decide which FamilySearch branches to inspect.
+    </p>
+  </section>
+
+  <section class="upload-card" [class.has-file]="importedGedcom">
+    <div class="upload-copy">
+      <p class="kicker">GEDCOM Source</p>
+      <h3>{{ importedGedcom ? 'GEDCOM ready' : 'Choose a .ged file' }}</h3>
+      <p *ngIf="!importedGedcom">
+        No cloud upload, no external service. The file is parsed and stored in this browser extension only.
+      </p>
+      <p *ngIf="importedGedcom">
+        {{ importedGedcom.fileName }} is parsed and available for start-person mapping.
+      </p>
+    </div>
+
+    <label class="upload-target">
+      <input type="file" accept=".ged,.gedcom,text/plain" (change)="onFileSelected($event)">
+      <span>{{ isParsing ? 'Parsing...' : 'Select GEDCOM' }}</span>
+    </label>
+  </section>
+
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <section class="summary-grid" *ngIf="importedGedcom as gedcom">
+    <div class="metric">
+      <span>People</span>
+      <strong>{{ gedcom.document.people.length }}</strong>
+    </div>
+    <div class="metric">
+      <span>Families</span>
+      <strong>{{ gedcom.document.families.length }}</strong>
+    </div>
+    <div class="metric">
+      <span>GEDCOM</span>
+      <strong>{{ gedcom.document.metadata.version || 'Unknown' }}</strong>
+    </div>
+    <div class="metric">
+      <span>Size</span>
+      <strong>{{ formatBytes(gedcom.fileSize) }}</strong>
+    </div>
+  </section>
+
+  <section class="details" *ngIf="importedGedcom as gedcom">
+    <div>
+      <p class="kicker">Import Summary</p>
+      <h3>{{ gedcom.fileName }}</h3>
+      <dl>
+        <div>
+          <dt>Source</dt>
+          <dd>{{ gedcom.document.metadata.source || 'Unknown' }}</dd>
+        </div>
+        <div>
+          <dt>Charset</dt>
+          <dd>{{ gedcom.document.metadata.charset || 'Unknown' }}</dd>
+        </div>
+        <div>
+          <dt>Imported</dt>
+          <dd>{{ gedcom.importedAt | date:'medium' }}</dd>
+        </div>
+      </dl>
+    </div>
+    <div class="details-actions">
+      <a routerLink="/results" class="review-link">View Results</a>
+      <button type="button" class="clear" (click)="clearGedcom()">Clear GEDCOM</button>
+    </div>
+  </section>
+</article>

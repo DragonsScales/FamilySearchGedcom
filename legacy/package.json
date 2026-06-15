@@ -1,0 +1,33 @@
+{
+  "name": "familysearch-gedcom-compare",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local read-only GEDCOM comparison tool for FamilySearch tree data.",
+  "scripts": {
+    "app:build": "ng build familysearch-extension-app",
+    "extension:build": "npm run app:build && npm run extension:check",
+    "gedcom:convert": "node scripts/run-ts.mjs src/gedcom/convert.ts",
+    "extension:check": "node scripts/check-extension.mjs",
+    "typecheck": "node scripts/check-typescript.mjs"
+  },
+  "dependencies": {
+    "@angular/common": "22.0.1",
+    "@angular/compiler": "22.0.1",
+    "@angular/core": "22.0.1",
+    "@angular/forms": "22.0.1",
+    "@angular/platform-browser": "22.0.1",
+    "@angular/router": "22.0.1",
+    "rxjs": "7.8.1",
+    "tslib": "2.6.2",
+    "zone.js": "0.16.0"
+  },
+  "devDependencies": {
+    "@angular/build": "22.0.1",
+    "@angular/cli": "22.0.1",
+    "@angular/compiler-cli": "22.0.1",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.0",
+    "typescript": "6.0.3"
+  }
+}

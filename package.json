@@ -6,7 +6,11 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "extension:build": "ng build && npm run extension:check",
+    "extension:check": "node scripts/check-extension.mjs",
+    "gedcom:convert": "node scripts/run-ts.mjs src/gedcom/convert.ts",
+    "typecheck": "node scripts/check-typescript.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
@@ -27,6 +31,7 @@
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.8",
+    "esbuild": "^0.28.0"
   }
 }

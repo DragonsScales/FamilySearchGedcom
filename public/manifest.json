@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "FamilySearch GEDCOM Collector",
+  "version": "0.1.0",
+  "description": "User-controlled read-only capture of visible FamilySearch person pages for local GEDCOM comparison.",
+  "permissions": ["storage", "tabs", "scripting", "alarms", "unlimitedStorage"],
+  "host_permissions": ["https://www.familysearch.org/*"],
+  "action": {
+    "default_title": "FamilySearch GEDCOM Collector"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.familysearch.org/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

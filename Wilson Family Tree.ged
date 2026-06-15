@@ -1,0 +1,939 @@
+0 HEAD
+1 SUBM @SUBM1@
+1 SOUR Ancestry.com Family Trees
+2 NAME Ancestry.com Member Trees
+2 VERS 2025.08
+2 _TREE Wilson Family Tree
+3 RIN 210860293
+3 _ENV prd
+2 CORP Ancestry.com
+3 PHON 801-705-7000
+3 WWW www.ancestry.com
+3 ADDR 1300 West Traverse Parkway
+4 CONT Lehi, UT  84043
+4 CONT USA
+1 DATE 11 Jun 2026
+2 TIME 02:37:43
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+0 @SUBM1@ SUBM
+1 NAME Ancestry.com Member Trees Submitter
+0 @I212774428240@ INDI
+1 NAME Harold Killbey /Wilson/
+2 GIVN Harold Killbey
+2 SURN Wilson
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813729
+1 SEX M
+1 FAMC @F5@
+1 FAMS @F14@
+1 BIRT
+2 DATE 05 Sep 1882
+2 PLAC Sulgrave, Northamptonshire, England
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813729
+1 RESI
+2 DATE 1921
+2 PLAC Wappenham, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813729
+2 NOTE Occupation: Farmer; Marital Status: Married; Relation to Head of House: Head
+1 DEAT
+2 DATE 19 Jan 1955
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -790103283:1030:9460253
+2 _APID 272030992095:1030:152371799
+2 _APID 370191334125:1030:115327279
+1 SOUR @S680823325@
+2 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+2 _APID 1,63150::11813729
+0 @I212774428241@ INDI
+1 NAME Annie /Emery/
+2 GIVN Annie
+2 SURN Emery
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813730
+1 SEX F
+1 FAMC @F12@
+1 FAMS @F14@
+1 BIRT
+2 DATE 20 May 1882
+2 PLAC Blakesley, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813730
+1 RESI
+2 DATE 1921
+2 PLAC Wappenham, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813730
+2 NOTE Occupation: Householder; Marital Status: Married; Relation to Head of House: Wife
+1 DEAT
+2 DATE 21 Mar 1950
+2 PLAC halifax, yorkshire west riding, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 24080497164:1030:9460253
+2 _APID 272018357227:1030:152371799
+2 _APID 370192244862:1030:115327279
+1 SOUR @S680823325@
+2 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+2 _APID 1,63150::11813730
+0 @I212774428536@ INDI
+1 NAME Frederick James /Emery/
+2 GIVN Frederick James
+2 SURN Emery
+1 SEX M
+1 FAMC @F12@
+1 FAMS @F2@
+1 BIRT
+2 DATE 1877
+2 PLAC Blakesley, Northamptonshire, England
+2 NOTE Baptised 4th March
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018332886:1030:152371799
+0 @I212774428537@ INDI
+1 NAME John /Emery/
+2 GIVN John
+2 SURN Emery
+1 SEX M
+1 FAMC @F12@
+1 BIRT
+2 DATE 19 Dec 1870
+2 PLAC Blakesley, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018332884:1030:152371799
+0 @I212774428538@ INDI
+1 NAME Edward /Emery/
+2 GIVN Edward
+2 SURN Emery
+1 SEX M
+1 FAMC @F12@
+1 BIRT
+2 DATE 1878
+2 PLAC Blakesley, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018332887:1030:152371799
+0 @I212774428539@ INDI
+1 NAME Thomas Frank /Emery/
+2 GIVN Thomas Frank
+2 SURN Emery
+1 SEX M
+1 FAMC @F12@
+1 FAMS @F4@
+1 BIRT
+2 DATE Mar 1881
+2 PLAC Blakesley, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018332888:1030:152371799
+0 @I212774428540@ INDI
+1 NAME Charles /Emery/
+2 GIVN Charles
+2 SURN Emery
+1 SEX M
+1 FAMC @F12@
+1 BIRT
+2 DATE 08 May 1871
+2 PLAC Blakesley, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018332885:1030:152371799
+0 @I212774428541@ INDI
+1 NAME Harriet Eliza /Emery/
+2 GIVN Harriet Eliza
+2 SURN Emery
+1 SEX F
+1 FAMC @F12@
+1 BIRT
+2 DATE 07 Nov 1873
+2 PLAC Blakesley, Northamptonshire, England
+1 DEAT
+2 DATE Mar 1951
+2 PLAC Nottingham, Nottinghamshire, England
+2 NOTE Age: 79
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018332883:1030:152371799
+0 @I212774428543@ INDI
+1 NAME Mabel /Emery/
+2 GIVN Mabel
+2 SURN Emery
+1 SEX F
+1 FAMC @F15@
+1 BIRT
+2 DATE 1888
+2 PLAC Blakesley, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018357231:1030:152371799
+0 @I212774428545@ INDI
+1 NAME John James /Emery/
+2 GIVN John James
+2 SURN Emery
+1 SEX M
+1 FAMC @F16@
+1 FAMS @F12@
+1 FAMS @F15@
+1 BIRT
+2 DATE Apr 1849
+2 PLAC Daventry, Northamptonshire, England
+1 DEAT
+2 DATE 02 Mar 1921
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272030992079:1030:152371799
+0 @I212774428547@ INDI
+1 NAME Charlotte Gibbard /Bray/
+2 GIVN Charlotte Gibbard
+2 SURN Bray
+1 SEX F
+1 FAMC @F7@
+1 FAMS @F12@
+1 BIRT
+2 DATE Jan 1849
+2 PLAC Blakesley, Northamptonshire, England
+1 DEAT
+2 DATE 1883
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272030992034:1030:152371799
+0 @I212774428549@ INDI
+1 NAME Harold Richard /Wilson/
+2 GIVN Harold Richard
+2 SURN Wilson
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813731
+1 SEX M
+1 FAMC @F14@
+1 FAMS @F13@
+1 BIRT
+2 DATE 03 May 1911
+2 PLAC Towcester, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813731
+1 RESI
+2 DATE 1921
+2 PLAC Wappenham, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813731
+2 NOTE Relation to Head of House: Son
+1 DEAT
+2 DATE Aug 1988
+2 PLAC Towcester, Northamptonshire, England
+1 DEAT
+2 DATE Aug 1988
+2 PLAC Northampton, Northamptonshire, England
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 24080497167:1030:9460253
+2 _APID 272030992035:1030:152371799
+2 _APID 370192244864:1030:115327279
+1 SOUR @S680823325@
+2 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+2 _APID 1,63150::11813731
+0 @I212774428552@ INDI
+1 NAME Gerald Emery /Wilson/
+2 GIVN Gerald Emery
+2 SURN Wilson
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813733
+1 SEX M
+1 FAMC @F14@
+1 FAMS @F11@
+1 BIRT
+2 DATE 22 Jul 1917
+2 PLAC Towcester, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813733
+1 RESI
+2 DATE 1921
+2 PLAC Wappenham, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813733
+2 NOTE Relation to Head of House: Son
+1 DEAT
+2 DATE 25 Feb 1993
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 24080497173:1030:9460253
+2 _APID 272030992036:1030:152371799
+2 _APID 370192244867:1030:115327279
+1 SOUR @S680823325@
+2 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+2 _APID 1,63150::11813733
+0 @I212774428701@ INDI
+1 NAME Adelaide /Abbott/
+2 GIVN Adelaide
+2 SURN Abbott
+1 SEX F
+1 FAMS @F11@
+1 BIRT
+2 DATE abt 1920
+1 DEAT
+2 DATE Sep 1960
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370192269903:1030:115327279
+0 @I212774428704@ INDI
+1 NAME John Walter /Wilson/
+2 GIVN John Walter
+2 SURN Wilson
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813732
+1 SEX M
+1 FAMC @F14@
+1 FAMS @F1@
+1 BIRT
+2 DATE 30 Nov 1913
+2 PLAC Weston, Northamptonshire, England
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813732
+1 BIRT
+2 DATE 30 Nov 1913
+2 PLAC Towcester, Northamptonshire
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+1 BIRT
+2 DATE 30 Nov 1913
+2 PLAC Towcester, Northamptonshire
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+1 RESI
+2 DATE 1921
+2 PLAC Wappenham, Northamptonshire, England
+2 SOUR @S680823325@
+3 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+3 _APID 1,63150::11813732
+2 NOTE Relation to Head of House: Son
+1 DEAT
+2 DATE Dec 1991
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 350061839083:1030:9460253
+2 _APID 370192244866:1030:115327279
+1 SOUR @S680823325@
+2 PAGE The National Archives of the UK (TNA); Kew, Surrey, England; 1921 Census Returns; Reference: RG 15/7588, ED 19, Sch 41; Book: 07588
+2 _APID 1,63150::11813732
+0 @I212774429105@ INDI
+1 NAME Frank Richard /Wilson/
+2 GIVN Frank Richard
+2 SURN Wilson
+1 SEX M
+1 FAMC @F5@
+1 FAMS @F8@
+1 BIRT
+2 DATE 10 Sept 1886
+2 PLAC Sulgrave, Northamptonshire, England
+1 DEAT
+2 DATE 18 Aug 1961
+2 PLAC Surrey, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -790102195:1030:9460253
+2 _APID 370191334135:1030:115327279
+0 @I212774429107@ INDI
+1 NAME Charles Leonard /Wilson/
+2 GIVN Charles Leonard
+2 SURN Wilson
+1 SEX M
+1 FAMC @F5@
+1 BIRT
+2 DATE 24 Sep 1900
+2 PLAC Towcester, Northamptonshire, England
+1 DEAT
+2 DATE 21 May 1985
+2 PLAC Wappenham, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -775355037:1030:9460253
+2 _APID 370191334134:1030:115327279
+0 @I212774429108@ INDI
+1 NAME Ralph Arnold /Wilson/
+2 GIVN Ralph Arnold
+2 SURN Wilson
+1 SEX M
+1 FAMC @F5@
+1 FAMS @F9@
+1 BIRT
+2 DATE 24 Jun 1895
+2 PLAC Weston, Northamptonshire, England
+1 DEAT
+2 DATE 30 Nov 1975
+2 PLAC Banbury, Oxfordshire
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -789709466:1030:9460253
+2 _APID 370191334132:1030:115327279
+0 @I212774429109@ INDI
+1 NAME Kate Martha /Wilson/
+2 GIVN Kate Martha
+2 SURN Wilson
+1 SEX F
+1 FAMC @F5@
+1 BIRT
+2 DATE 14 Dec 1889
+2 PLAC Sulgrave, Northamptonshire, England
+1 DEAT
+2 DATE 8 Sep 1969
+2 PLAC Blakesley, Northamptonshire, England
+2 NOTE Age: 79
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -790101131:1030:9460253
+2 _APID 370191334129:1030:115327279
+0 @I212774429110@ INDI
+1 NAME Thomas Stuchfield /Wilson/
+2 GIVN Thomas Stuchfield
+2 SURN Wilson
+1 SEX M
+1 FAMC @F5@
+1 BIRT
+2 DATE 24 Mar 1888
+2 PLAC Sulgrave, Northamptonshire, England
+1 DEAT
+2 DATE 13 Dec 1952
+2 PLAC Daventry, Northamptonshire, England
+2 NOTE Age: 64
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -790101687:1030:9460253
+2 _APID 370191334127:1030:115327279
+0 @I212774429111@ INDI
+1 NAME Hilda Mary /Wilson/
+2 GIVN Hilda Mary
+2 SURN Wilson
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+1 SEX F
+1 FAMC @F5@
+1 FAMS @F10@
+1 BIRT
+2 DATE 14 Dec 1897
+2 PLAC Weston, Northamptonshire, England
+1 DEAT
+2 DATE 1 Aug 1977
+2 PLAC Brackley, Northamptonshire, England
+2 NOTE Age: 79
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -789703761:1030:9460253
+2 _APID 370191334133:1030:115327279
+0 @I212774429112@ INDI
+1 NAME Walter Horace /Wilson/
+2 GIVN Walter Horace
+2 SURN Wilson
+1 SEX M
+1 FAMC @F5@
+1 BIRT
+2 DATE 9 May 1891
+2 PLAC Weston, Northamptonshire, England
+1 DEAT
+2 DATE 9 Apr 1976
+2 PLAC Ealing, Middlesex, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -790093389:1030:9460253
+2 _APID 370191334130:1030:115327279
+0 @I212774429113@ INDI
+1 NAME Frederick John /Wilson/
+2 GIVN Frederick John
+2 SURN Wilson
+1 SEX M
+1 FAMC @F5@
+1 BIRT
+2 DATE 24 Jul 1884
+2 PLAC Sulgrave, Northamptonshire, England
+1 DEAT
+2 DATE 17 Oct 1975
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -790102682:1030:9460253
+2 _APID 370191334126:1030:115327279
+0 @I212774429114@ INDI
+1 NAME Gertrude Alice /Wilson/
+2 GIVN Gertrude Alice
+2 SURN Wilson
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+1 SEX F
+1 FAMC @F5@
+1 FAMS @F6@
+1 BIRT
+2 DATE 10 Dec 1893
+2 PLAC Weston, Northamptonshire, England
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+1 DEAT
+2 DATE 5 Mar 1972
+2 PLAC Northampton, Northamptonshire, England
+2 SOUR @S680413514@
+3 PAGE Ancestry Family Tree
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -789711611:1030:9460253
+2 _APID 370191334131:1030:115327279
+0 @I212774429115@ INDI
+1 NAME Stephen Richard /Wilson/
+2 GIVN Stephen Richard
+2 SURN Wilson
+1 SEX M
+1 FAMS @F5@
+1 BIRT
+2 DATE 9 May 1846
+2 PLAC Lois Weedon, Northamptonshire, England
+1 DEAT
+2 DATE 15 Dec 1920
+2 PLAC Towcester, Northamptonshire, England
+2 NOTE Age: 75
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -775355291:1030:9460253
+2 _APID 370140343454:1030:115327279
+0 @I212774429116@ INDI
+1 NAME Mary Elizabeth /Killbey/
+2 GIVN Mary Elizabeth
+2 SURN Killbey
+1 SEX F
+1 FAMS @F5@
+1 BIRT
+2 DATE 9 Aug 1855
+2 PLAC Sulgrave, Northamptonshire, England
+1 DEAT
+2 DATE 30 May 1944
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID -797387978:1030:9460253
+2 _APID 370191334124:1030:115327279
+0 @I212774429303@ INDI
+1 NAME Reginald Mark /Seckington/
+2 GIVN Reginald Mark
+2 SURN Seckington
+1 SEX M
+1 FAMS @F10@
+1 BIRT
+2 DATE 18 May 1898
+2 PLAC Weston, Northamptonshire
+1 DEAT
+2 DATE 3 Jul 1981
+2 PLAC Towcester, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370193372577:1030:115327279
+0 @I212774429304@ INDI
+1 NAME Maurice /Seckington/
+2 GIVN Maurice
+2 SURN Seckington
+1 SEX M
+1 FAMC @F10@
+1 FAMS @F3@
+1 BIRT
+2 DATE 20 Sep 1928
+2 PLAC Weston
+1 DEAT
+2 DATE Sep 1995
+2 PLAC Barnstaple, Devon, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370193372578:1030:115327279
+0 @I212774429744@ INDI
+1 NAME Isobel Louise /Paton/
+2 GIVN Isobel Louise
+2 SURN Paton
+1 FAMS @F3@
+1 BIRT
+2 DATE 27 Aug 1928
+2 PLAC Cardiff, Wales
+1 DEAT
+2 DATE Jun 2001
+2 PLAC Northampton, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370193380631:1030:115327279
+0 @I212774429902@ INDI
+1 NAME Elizabeth /Fry/
+2 GIVN Elizabeth
+2 SURN Fry
+1 SEX F
+1 FAMS @F8@
+1 BIRT
+2 DATE Dec 1887
+2 PLAC Alderbury, Wiltshire, England
+1 DEAT
+2 DATE Sep 1966
+2 PLAC Horsham, Sussex, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370192508462:1030:115327279
+0 @I212774429903@ INDI
+1 NAME Aubrey Frank /Wilson/
+2 GIVN Aubrey Frank
+2 SURN Wilson
+1 SEX M
+1 FAMC @F8@
+1 BIRT
+2 DATE 16 May 1922
+2 PLAC Barnet, Hertfordshire
+1 DEAT
+2 DATE Sep 1989
+2 PLAC Lichfield, Staffordshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370192508466:1030:115327279
+0 @I212774429904@ INDI
+1 NAME Roland Stephen /Wilson/
+2 GIVN Roland Stephen
+2 SURN Wilson
+1 SEX M
+1 FAMC @F8@
+1 BIRT
+2 DATE 27 Apr 1917
+2 PLAC Barnet, Hertfordshire
+1 DEAT
+2 DATE 19 Jan 1992
+2 PLAC Shripney Bognor Regis
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370192508465:1030:115327279
+0 @I212774429976@ INDI
+1 NAME Lesley Mary /Newitt/
+2 GIVN Lesley Mary
+2 SURN Newitt
+1 SEX F
+1 FAMS @F9@
+1 BIRT
+2 DATE 17 Jun 1907
+2 PLAC Towcester, Northamptonshire
+1 DEAT
+2 DATE 26 Apr 1994
+2 PLAC Northampton, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370193366862:1030:115327279
+0 @I212774429977@ INDI
+1 NAME John Henry /Wilson/
+2 GIVN John Henry
+2 SURN Wilson
+1 SEX M
+1 FAMC @F9@
+1 BIRT
+2 DATE About 1930
+1 DEAT
+2 DATE 25 Dec 2012
+2 PLAC Northampton, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370193370240:1030:115327279
+0 @I212774433384@ INDI
+1 NAME Queenie /Varney/
+2 GIVN Queenie
+2 SURN Varney
+1 SEX F
+1 FAMS @F1@
+1 BIRT
+2 DATE Abt 1911
+2 PLAC Towcester, Northamptonshire
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370192272289:1030:115327279
+0 @I212774433479@ INDI
+1 NAME Frank /Sanders/
+2 GIVN Frank
+2 SURN Sanders
+1 SEX M
+1 FAMS @F6@
+1 BIRT
+2 DATE 22 May 1883
+2 PLAC Kilby, Leicestershire, England
+1 DEAT
+2 DATE 02 Apr 1972
+2 PLAC Northampton, Northamptonshire, England, United Kingdom
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370193362799:1030:115327279
+0 @I212774433480@ INDI
+1 NAME Josephine /Sanders/
+2 GIVN Josephine
+2 SURN Sanders
+1 SEX F
+1 FAMC @F6@
+1 BIRT
+2 DATE 5 Feb 1919
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 372037171833:1030:115327279
+0 @I212774433541@ INDI
+1 NAME Muriel M /King/
+2 GIVN Muriel M
+2 SURN King
+1 SEX F
+1 FAMS @F13@
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 370192269080:1030:115327279
+0 @I212774433746@ INDI
+1 NAME Eva May /Cross/
+2 GIVN Eva May
+2 SURN Cross
+1 SEX F
+1 FAMS @F2@
+1 BIRT
+2 DATE 14 Mar 1888
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272030992090:1030:152371799
+0 @I212774433853@ INDI
+1 NAME Harriet Ann /Bray/
+2 GIVN Harriet Ann
+2 SURN Bray
+1 SEX F
+1 FAMC @F7@
+1 BIRT
+2 DATE Oct 1843
+2 PLAC Towcester, Northamptonshire, United Kingdom
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018357241:1030:152371799
+0 @I212774433854@ INDI
+1 NAME Henry /Bray/
+2 GIVN Henry
+2 SURN Bray
+1 SEX M
+1 FAMC @F7@
+1 BIRT
+2 DATE 1841
+2 PLAC Blakesley, Northamptonshire, England
+1 DEAT
+2 DATE 1887
+2 PLAC Blakesley, Northamptonshire, England
+2 NOTE Age: 46
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272019327438:1030:152371799
+0 @I212774433855@ INDI
+1 NAME Richard /Bray/
+2 GIVN Richard
+2 SURN Bray
+1 SEX M
+1 FAMS @F7@
+1 BIRT
+2 DATE 1812
+2 PLAC Milton, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018332890:1030:152371799
+0 @I212774433856@ INDI
+1 NAME Harriet /Gibbard/
+2 GIVN Harriet
+2 SURN Gibbard
+1 SEX F
+1 FAMS @F7@
+1 BIRT
+2 DATE 1811
+2 PLAC Adstone, Northamptonshire, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272018357242:1030:152371799
+0 @I212774451284@ INDI
+1 NAME Ellen /Emery/
+2 GIVN Ellen
+2 SURN Emery
+1 SEX F
+1 FAMS @F4@
+1 BIRT
+2 DATE 1878
+2 PLAC Plymouth, Devon, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272030992024:1030:152371799
+0 @I212774451285@ INDI
+1 NAME Leslie /Emery/
+2 GIVN Leslie
+2 SURN Emery
+1 SEX M
+1 FAMC @F4@
+1 BIRT
+2 DATE 1905
+2 PLAC Plymouth, Devon, England
+1 SOUR @S680413514@
+2 PAGE Ancestry Family Tree
+2 _APID 272030992025:1030:152371799
+0 @I212777666494@ INDI
+1 NAME Thomas /Emery/
+2 GIVN Thomas
+2 SURN Emery
+1 SEX M
+1 FAMS @F16@
+1 BIRT
+2 DATE 17 Apr 1824
+2 PLAC Daventry, Northamptonshire, England
+1 DEAT
+2 DATE 28 Nov 1880
+2 PLAC Northamptonshire, England
+0 @F1@ FAM
+1 HUSB @I212774428704@
+1 WIFE @I212774433384@
+1 MARR
+2 DATE Dec 1938
+2 PLAC Towcester, Northamptonshire
+0 @F2@ FAM
+1 HUSB @I212774428536@
+1 WIFE @I212774433746@
+1 MARR
+2 DATE 03 Dec 1917
+2 PLAC Fulham, London, England
+2 NOTE St Augustines
+0 @F3@ FAM
+1 HUSB @I212774429304@
+1 WIFE @I212774429744@
+1 MARR
+2 DATE Jun 1958
+2 PLAC Towcester, Northamptonshire
+0 @F4@ FAM
+1 HUSB @I212774428539@
+1 WIFE @I212774451284@
+1 CHIL @I212774451285@
+0 @F5@ FAM
+1 HUSB @I212774429115@
+1 WIFE @I212774429116@
+1 CHIL @I212774428240@
+1 CHIL @I212774429113@
+1 CHIL @I212774429105@
+1 CHIL @I212774429110@
+1 CHIL @I212774429109@
+1 CHIL @I212774429112@
+1 CHIL @I212774429114@
+1 CHIL @I212774429108@
+1 CHIL @I212774429111@
+1 CHIL @I212774429107@
+1 MARR
+2 DATE 30 Apr 1881
+2 PLAC Sulgrave, Northamptonshire, England
+0 @F6@ FAM
+1 HUSB @I212774433479@
+1 WIFE @I212774429114@
+1 CHIL @I212774433480@
+1 MARR
+2 DATE 17 Nov 1931
+2 PLAC Staverton, Northampton,  England, United Kingdom
+0 @F7@ FAM
+1 HUSB @I212774433855@
+1 WIFE @I212774433856@
+1 CHIL @I212774433854@
+1 CHIL @I212774433853@
+1 CHIL @I212774428547@
+1 MARR
+2 DATE 18 Apr 1839
+2 PLAC Blakesley, Northamptonshire, England
+0 @F8@ FAM
+1 HUSB @I212774429105@
+1 WIFE @I212774429902@
+1 CHIL @I212774429904@
+1 CHIL @I212774429903@
+1 MARR
+2 DATE 23 Aug 1914
+2 PLAC Saint Thomas, Salisbury, Wiltshire, England
+0 @F9@ FAM
+1 HUSB @I212774429108@
+1 WIFE @I212774429976@
+1 CHIL @I212774429977@
+1 MARR
+2 DATE 29 Sep 1931
+2 PLAC South Wimbledon, Holy Trinity and St Peter, Surrey, England
+0 @F10@ FAM
+1 HUSB @I212774429303@
+1 WIFE @I212774429111@
+1 CHIL @I212774429304@
+1 MARR
+2 DATE 01 Jun 1925
+2 PLAC Towcester, Northamptonshire
+0 @F11@ FAM
+1 HUSB @I212774428552@
+1 WIFE @I212774428701@
+1 MARR
+2 DATE May 1947
+2 PLAC Blakesley, Northamptonshire
+0 @F12@ FAM
+1 HUSB @I212774428545@
+1 WIFE @I212774428547@
+1 CHIL @I212774428537@
+1 CHIL @I212774428540@
+1 CHIL @I212774428541@
+1 CHIL @I212774428536@
+1 CHIL @I212774428538@
+1 CHIL @I212774428539@
+1 CHIL @I212774428241@
+1 MARR
+2 DATE 01 Dec 1868
+2 PLAC Blakesley, Northamptonshire, England
+0 @F13@ FAM
+1 HUSB @I212774428549@
+1 WIFE @I212774433541@
+1 MARR
+2 DATE Dec 1940
+2 PLAC Towcester, Northamptonshire
+0 @F14@ FAM
+1 HUSB @I212774428240@
+1 WIFE @I212774428241@
+1 CHIL @I212774428549@
+1 CHIL @I212774428704@
+1 CHIL @I212774428552@
+1 MARR
+2 DATE 08 Sep 1908
+2 PLAC Blakesley, Northamptonshire, England
+0 @F15@ FAM
+1 HUSB @I212774428545@
+1 CHIL @I212774428543@
+0 @F16@ FAM
+1 HUSB @I212777666494@
+1 CHIL @I212774428545@
+0 @S680413514@ SOUR
+1 TITL Ancestry Family Tree
+1 PUBL
+2 PLAC Online publication - Provo, UT, USA: Ancestry.com.  Original data:  Family Tree files submitted by Ancestry members.
+1 _APID 1,1030::0
+1 REPO @R556210760@
+0 @S680823325@ SOUR
+1 TITL 1921 England Census
+1 AUTH Ancestry.com
+1 PUBL Ancestry.com Operations, Inc.
+2 DATE 2025
+2 PLAC Lehi, UT, USA
+1 _APID 1,63150::0
+1 REPO @R556210760@
+0 @R556210760@ REPO
+1 NAME Ancestry.com
+0 TRLR

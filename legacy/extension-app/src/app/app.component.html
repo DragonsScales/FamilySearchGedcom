@@ -1,11 +1,3 @@
-<nav class="quick-nav" aria-label="Quick navigation">
-  <a routerLink="/gedcom" routerLinkActive="active">GEDCOM</a>
-  <a routerLink="/results" routerLinkActive="active">Results</a>
-  <span>Mapping</span>
-  <span>Traversal</span>
-  <button type="button" (click)="reloadExtension()">Reload Extension</button>
-</nav>
-
 <main class="shell">
   <aside class="rail" aria-label="Project navigation">
     <p class="eyebrow">Local Tree Lab</p>
@@ -14,7 +6,7 @@
       Upload a GEDCOM, map it to the current FamilySearch person, then let the extension collect the matching tree branches for review.
     </p>
 
-    <nav class="rail-nav">
+    <nav>
       <a routerLink="/gedcom" routerLinkActive="active">GEDCOM Upload</a>
       <span>Mapping</span>
       <span>Traversal</span>

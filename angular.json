@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": "e42e9146-cb76-454f-9c57-9785834f3c3e"
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -26,28 +27,33 @@
             ],
             "styles": [
               "src/styles.css"
-            ]
+            ],
+            "outputPath": {
+              "base": "extension/familysearch-collector",
+              "browser": ""
+            },
+            "baseHref": "./"
           },
           "configurations": {
             "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+              "budgets": [],
+              "outputHashing": "none",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
                 },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
-              ],
-              "outputHashing": "all"
+                "fonts": false
+              },
+              "sourceMap": false,
+              "namedChunks": false
             },
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": true,
+              "outputHashing": "none"
             }
           },
           "defaultConfiguration": "production"

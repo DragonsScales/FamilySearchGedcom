@@ -1,0 +1,224 @@
+<article class="page">
+  <section class="hero">
+    <p class="eyebrow">Step 2</p>
+    <h2>GEDCOM review cards</h2>
+    <p>
+      This view shows the normalized GEDCOM data first. FamilySearch comparison columns can plug into these same cards once traversal is ready.
+    </p>
+  </section>
+
+  <details class="debug-panel">
+    <summary>
+      <span>Storage Debug</span>
+      <small>{{ debugLastRefresh }}</small>
+    </summary>
+    <div class="debug-header">
+      <div>
+        <p class="kicker">Storage Debug</p>
+        <h3>Extension storage snapshot</h3>
+        <p class="debug-status">{{ debugLastRefresh }}</p>
+      </div>
+      <button type="button" (click)="loadStoredGedcom('manual refresh')">Refresh Storage</button>
+    </div>
+    <div class="debug-grid">
+      <div>
+        <p class="debug-label">Typed import result</p>
+        <pre>{{ debugImportSummary }}</pre>
+      </div>
+      <div>
+        <p class="debug-label">Raw chrome.storage.local</p>
+        <pre>{{ debugStorageJson }}</pre>
+      </div>
+    </div>
+  </details>
+
+  <section class="empty-state" *ngIf="!importedGedcom">
+    <p class="kicker">No GEDCOM Loaded</p>
+    <h3>Upload a GEDCOM before reviewing cards.</h3>
+    <p class="error" *ngIf="loadErrorMessage">{{ loadErrorMessage }}</p>
+    <p>The results route is ready, but it needs a locally stored GEDCOM import to render people.</p>
+    <a routerLink="/gedcom">Go to upload</a>
+  </section>
+
+  <ng-container *ngIf="importedGedcom as gedcom">
+    <section class="review-toolbar">
+      <div>
+        <p class="kicker">Loaded GEDCOM</p>
+        <h3>{{ gedcom.fileName }}</h3>
+        <p>{{ personCards.length }} people ready for review.</p>
+      </div>
+
+      <details class="settings-panel">
+        <summary>Card Settings</summary>
+        <label class="switch-row">
+          <span>Relationships open by default</span>
+          <input
+            type="checkbox"
+            [checked]="settings.relationshipsOpen"
+            (change)="setDefaultOpen('relationshipsOpen', $event)"
+          >
+        </label>
+        <label class="switch-row">
+          <span>Residences open by default</span>
+          <input
+            type="checkbox"
+            [checked]="settings.residencesOpen"
+            (change)="setDefaultOpen('residencesOpen', $event)"
+          >
+        </label>
+        <label class="switch-row">
+          <span>Other open by default</span>
+          <input
+            type="checkbox"
+            [checked]="settings.otherOpen"
+            (change)="setDefaultOpen('otherOpen', $event)"
+          >
+        </label>
+      </details>
+    </section>
+
+    <section class="cards" aria-label="GEDCOM people">
+      <article class="person-card" *ngFor="let person of personCards; trackBy: trackByPersonId">
+        <header class="card-header">
+          <div>
+            <p class="kicker">GEDCOM {{ person.id }}</p>
+            <h3>{{ person.name }}</h3>
+          </div>
+          <span class="id-pill">{{ person.id }}</span>
+        </header>
+
+        <dl class="fact-lines">
+          <div>
+            <dt>Name</dt>
+            <dd>{{ person.name }}</dd>
+          </div>
+          <div>
+            <dt>Gender</dt>
+            <dd>{{ person.gender }}</dd>
+          </div>
+          <div>
+            <dt>Birth Date</dt>
+            <dd>{{ person.birth?.date || 'Not listed' }}</dd>
+          </div>
+          <div>
+            <dt>Birth Place</dt>
+            <dd>{{ person.birth?.place || 'Not listed' }}</dd>
+          </div>
+          <div>
+            <dt>Death Date</dt>
+            <dd>{{ person.death?.date || 'Not listed' }}</dd>
+          </div>
+          <div>
+            <dt>Death Place</dt>
+            <dd>{{ person.death?.place || 'Not listed' }}</dd>
+          </div>
+          <div>
+            <dt>Christening Date</dt>
+            <dd>{{ person.christening?.date || 'Not listed' }}</dd>
+          </div>
+          <div>
+            <dt>Christening Place</dt>
+            <dd>{{ person.christening?.place || 'Not listed' }}</dd>
+          </div>
+          <div>
+            <dt>Burial Date</dt>
+            <dd>{{ person.burial?.date || 'Not listed' }}</dd>
+          </div>
+          <div>
+            <dt>Burial Place</dt>
+            <dd>{{ person.burial?.place || 'Not listed' }}</dd>
+          </div>
+          <div class="wide">
+            <dt>Alternate Names</dt>
+            <dd>
+              <ng-container *ngIf="person.alternateNames.length; else noAlternateNames">
+                <span class="name-chip" *ngFor="let name of person.alternateNames">{{ name }}</span>
+              </ng-container>
+              <ng-template #noAlternateNames>Not listed</ng-template>
+            </dd>
+          </div>
+        </dl>
+
+        <section class="relationship-grid">
+          <details
+            [open]="person.sections.parentsOpen"
+            (toggle)="setSectionOpen(person, 'parentsOpen', $event)"
+          >
+            <summary>Parents <span>{{ person.parents.length }}</span></summary>
+            <ul *ngIf="person.parents.length; else noParents">
+              <li *ngFor="let parent of person.parents; trackBy: trackByRelatedId">
+                <strong>{{ parent.name }}</strong>
+                <small>{{ parent.id }}</small>
+              </li>
+            </ul>
+            <ng-template #noParents><p class="empty-line">Not listed</p></ng-template>
+          </details>
+
+          <details
+            [open]="person.sections.childrenOpen"
+            (toggle)="setSectionOpen(person, 'childrenOpen', $event)"
+          >
+            <summary>Children <span>{{ person.children.length }}</span></summary>
+            <ul *ngIf="person.children.length; else noChildren">
+              <li *ngFor="let child of person.children; trackBy: trackByRelatedId">
+                <strong>{{ child.name }}</strong>
+                <small>{{ child.id }}</small>
+              </li>
+            </ul>
+            <ng-template #noChildren><p class="empty-line">Not listed</p></ng-template>
+          </details>
+
+          <details
+            [open]="person.sections.siblingsOpen"
+            (toggle)="setSectionOpen(person, 'siblingsOpen', $event)"
+          >
+            <summary>Siblings <span>{{ person.siblings.length }}</span></summary>
+            <ul *ngIf="person.siblings.length; else noSiblings">
+              <li *ngFor="let sibling of person.siblings; trackBy: trackByRelatedId">
+                <strong>{{ sibling.name }}</strong>
+                <small>{{ sibling.id }}</small>
+              </li>
+            </ul>
+            <ng-template #noSiblings><p class="empty-line">Not listed</p></ng-template>
+          </details>
+        </section>
+
+        <section class="bottom-folds">
+          <details
+            [open]="person.sections.residencesOpen"
+            (toggle)="setSectionOpen(person, 'residencesOpen', $event)"
+          >
+            <summary>Residences <span>{{ person.residences.length }}</span></summary>
+            <div *ngIf="person.residences.length; else noResidences" class="fact-list">
+              <div class="mini-fact" *ngFor="let fact of person.residences; trackBy: trackByFact">
+                <p class="mini-title">{{ fact.label }}</p>
+                <p *ngIf="fact.date"><strong>Date:</strong> {{ fact.date }}</p>
+                <p *ngIf="fact.place"><strong>Place:</strong> {{ fact.place }}</p>
+                <p *ngIf="fact.value"><strong>Value:</strong> {{ fact.value }}</p>
+                <p *ngFor="let note of fact.notes"><strong>Note:</strong> {{ note }}</p>
+              </div>
+            </div>
+            <ng-template #noResidences><p class="empty-line">Not listed</p></ng-template>
+          </details>
+
+          <details
+            [open]="person.sections.otherOpen"
+            (toggle)="setSectionOpen(person, 'otherOpen', $event)"
+          >
+            <summary>Other <span>{{ person.otherFacts.length }}</span></summary>
+            <div *ngIf="person.otherFacts.length; else noOtherFacts" class="fact-list">
+              <div class="mini-fact" *ngFor="let fact of person.otherFacts; trackBy: trackByFact">
+                <p class="mini-title">{{ fact.label }}</p>
+                <p *ngIf="fact.date"><strong>Date:</strong> {{ fact.date }}</p>
+                <p *ngIf="fact.place"><strong>Place:</strong> {{ fact.place }}</p>
+                <p *ngIf="fact.value"><strong>Value:</strong> {{ fact.value }}</p>
+                <p *ngFor="let note of fact.notes"><strong>Note:</strong> {{ note }}</p>
+              </div>
+            </div>
+            <ng-template #noOtherFacts><p class="empty-line">Not listed</p></ng-template>
+          </details>
+        </section>
+      </article>
+    </section>
+  </ng-container>
+</article>
