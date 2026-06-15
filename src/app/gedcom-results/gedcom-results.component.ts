@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ExtensionStorageService, StoredGedcomImport } from '../extension-storage.service';
 import {
@@ -81,26 +80,35 @@ const FACT_LABELS: Record<string, string> = {
 @Component({
   selector: 'fsg-gedcom-results',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [RouterLink],
   templateUrl: './gedcom-results.component.html',
   styleUrl: './gedcom-results.component.css'
 })
 export class GedcomResultsComponent implements OnDestroy, OnInit {
   private readonly storage = inject(ExtensionStorageService);
-  private readonly changeDetector = inject(ChangeDetectorRef);
   private delayedRefreshId: number | null = null;
 
-  importedGedcom: StoredGedcomImport | null = null;
-  personCards: PersonCard[] = [];
-  loadErrorMessage = '';
-  debugStorageJson = 'Loading chrome.storage.local...';
-  debugImportSummary = 'Loading typed GEDCOM import...';
-  debugLastRefresh = 'Not refreshed yet.';
-  settings: Record<SettingKey, boolean> = {
+  readonly importedGedcom = signal<StoredGedcomImport | null>(null);
+  readonly loadErrorMessage = signal('');
+  readonly debugStorageJson = signal('Loading chrome.storage.local...');
+  readonly debugImportSummary = signal('Loading typed GEDCOM import...');
+  readonly debugLastRefresh = signal('Not refreshed yet.');
+  readonly settings = signal<Record<SettingKey, boolean>>({
     relationshipsOpen: false,
     residencesOpen: false,
     otherOpen: false
-  };
+  });
+  readonly sectionOverrides = signal<Record<string, Partial<CardSections>>>({});
+  readonly personCards = computed(() => {
+    const importedGedcom = this.importedGedcom();
+    if (!importedGedcom) return [];
+
+    return this.buildPersonCards(
+      importedGedcom.document,
+      this.settings(),
+      this.sectionOverrides()
+    );
+  });
 
   async ngOnInit(): Promise<void> {
     await this.loadStoredGedcom();
@@ -118,102 +126,95 @@ export class GedcomResultsComponent implements OnDestroy, OnInit {
   }
 
   async loadStoredGedcom(reason = 'manual refresh'): Promise<void> {
-    this.debugLastRefresh = `Running ${reason}...`;
-    this.changeDetector.detectChanges();
+    this.debugLastRefresh.set(`Running ${reason}...`);
 
     await this.refreshStorageDebugPanel();
 
     try {
-      this.importedGedcom = await this.storage.getGedcomImport();
-      this.personCards = this.importedGedcom ? this.buildPersonCards(this.importedGedcom.document) : [];
-      this.debugImportSummary = JSON.stringify(summarizeImport(this.importedGedcom), null, 2);
-      this.loadErrorMessage = '';
+      const importedGedcom = await this.storage.getGedcomImport();
+      this.importedGedcom.set(importedGedcom);
+      this.debugImportSummary.set(JSON.stringify(summarizeImport(importedGedcom), null, 2));
+      this.loadErrorMessage.set('');
     } catch (error) {
-      this.loadErrorMessage = error instanceof Error
+      const message = error instanceof Error
         ? error.message
         : 'The saved GEDCOM could not be loaded.';
-      this.importedGedcom = null;
-      this.personCards = [];
-      this.debugImportSummary = `Error: ${this.loadErrorMessage}`;
+      this.loadErrorMessage.set(message);
+      this.importedGedcom.set(null);
+      this.debugImportSummary.set(`Error: ${message}`);
     }
 
-    this.debugLastRefresh = `${reason} finished at ${new Date().toLocaleTimeString()}`;
-    this.changeDetector.detectChanges();
+    this.debugLastRefresh.set(`${reason} finished at ${new Date().toLocaleTimeString()}`);
   }
 
   async refreshStorageDebugPanel(): Promise<void> {
     try {
       const snapshot = await getChromeStorageSnapshot();
-      this.debugStorageJson = JSON.stringify(snapshot, null, 2);
+      this.debugStorageJson.set(JSON.stringify(snapshot, null, 2));
     } catch (error) {
-      this.debugStorageJson = error instanceof Error ? error.message : 'Could not read chrome.storage.local.';
+      this.debugStorageJson.set(error instanceof Error ? error.message : 'Could not read chrome.storage.local.');
     }
-
-    this.changeDetector.detectChanges();
   }
 
   setDefaultOpen(setting: SettingKey, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
-    this.settings = {
-      ...this.settings,
+    this.settings.update((settings) => ({
+      ...settings,
       [setting]: checked
-    };
+    }));
 
-    for (const card of this.personCards) {
-      if (setting === 'relationshipsOpen') {
-        card.sections.parentsOpen = checked;
-        card.sections.childrenOpen = checked;
-        card.sections.siblingsOpen = checked;
-      }
-
-      if (setting === 'residencesOpen') card.sections.residencesOpen = checked;
-      if (setting === 'otherOpen') card.sections.otherOpen = checked;
-    }
+    this.sectionOverrides.update((overrides) => clearOverridesForSetting(overrides, setting));
   }
 
   setSectionOpen(card: PersonCard, section: SectionKey, event: Event): void {
-    card.sections[section] = (event.target as HTMLDetailsElement).open;
-  }
-
-  trackByPersonId(_index: number, card: PersonCard): string {
-    return card.id;
-  }
-
-  trackByRelatedId(_index: number, person: RelatedPersonView): string {
-    return person.id;
-  }
-
-  trackByFact(_index: number, fact: FactView): string {
-    return `${fact.type}:${fact.date ?? ''}:${fact.place ?? ''}:${fact.value ?? ''}`;
-  }
-
-  private buildPersonCards(document: NormalizedGedcomDocument): PersonCard[] {
-    const personById = new Map(document.people.map((person) => [person.id, person]));
-
-    return document.people.map((person) => ({
-      id: person.id,
-      name: getPrimaryName(person),
-      gender: formatGender(person.sex),
-      alternateNames: person.names.slice(1).map(formatName).filter(Boolean),
-      birth: toFactView(findFact(person, 'BIRT')),
-      death: toFactView(findFact(person, 'DEAT')),
-      christening: toFactView(findFact(person, 'CHR')),
-      burial: toFactView(findFact(person, 'BURI')),
-      parents: resolveRelatedPeople(person.relationships.parents, personById),
-      children: resolveRelatedPeople(person.relationships.children, personById),
-      siblings: resolveRelatedPeople(person.relationships.siblings, personById),
-      residences: person.facts.filter((fact) => fact.type === 'RESI').map(toRequiredFactView),
-      otherFacts: person.facts
-        .filter((fact) => !CORE_FACTS.has(fact.type) && fact.type !== 'RESI')
-        .map(toRequiredFactView),
-      sections: {
-        parentsOpen: this.settings.relationshipsOpen,
-        childrenOpen: this.settings.relationshipsOpen,
-        siblingsOpen: this.settings.relationshipsOpen,
-        residencesOpen: this.settings.residencesOpen,
-        otherOpen: this.settings.otherOpen
+    const open = (event.target as HTMLDetailsElement).open;
+    this.sectionOverrides.update((overrides) => ({
+      ...overrides,
+      [card.id]: {
+        ...overrides[card.id],
+        [section]: open
       }
     }));
+  }
+
+  private buildPersonCards(
+    document: NormalizedGedcomDocument,
+    settings: Record<SettingKey, boolean>,
+    sectionOverrides: Record<string, Partial<CardSections>>
+  ): PersonCard[] {
+    const personById = new Map(document.people.map((person) => [person.id, person]));
+
+    return document.people.map((person) => {
+      const defaultSections: CardSections = {
+        parentsOpen: settings.relationshipsOpen,
+        childrenOpen: settings.relationshipsOpen,
+        siblingsOpen: settings.relationshipsOpen,
+        residencesOpen: settings.residencesOpen,
+        otherOpen: settings.otherOpen
+      };
+
+      return {
+        id: person.id,
+        name: getPrimaryName(person),
+        gender: formatGender(person.sex),
+        alternateNames: person.names.slice(1).map(formatName).filter(Boolean),
+        birth: toFactView(findFact(person, 'BIRT')),
+        death: toFactView(findFact(person, 'DEAT')),
+        christening: toFactView(findFact(person, 'CHR')),
+        burial: toFactView(findFact(person, 'BURI')),
+        parents: resolveRelatedPeople(person.relationships.parents, personById),
+        children: resolveRelatedPeople(person.relationships.children, personById),
+        siblings: resolveRelatedPeople(person.relationships.siblings, personById),
+        residences: person.facts.filter((fact) => fact.type === 'RESI').map(toRequiredFactView),
+        otherFacts: person.facts
+          .filter((fact) => !CORE_FACTS.has(fact.type) && fact.type !== 'RESI')
+          .map(toRequiredFactView),
+        sections: {
+          ...defaultSections,
+          ...sectionOverrides[person.id]
+        }
+      };
+    });
   }
 }
 
@@ -268,6 +269,27 @@ function toRequiredFactView(fact: NormalizedGedcomFact): FactView {
 
 function titleCase(value: string): string {
   return value.toLowerCase().replace(/(^|_|\s)\w/g, (letter) => letter.toUpperCase());
+}
+
+function clearOverridesForSetting(
+  overrides: Record<string, Partial<CardSections>>,
+  setting: SettingKey
+): Record<string, Partial<CardSections>> {
+  const sectionsToClear: SectionKey[] = setting === 'relationshipsOpen'
+    ? ['parentsOpen', 'childrenOpen', 'siblingsOpen']
+    : setting === 'residencesOpen'
+      ? ['residencesOpen']
+      : ['otherOpen'];
+
+  return Object.fromEntries(
+    Object.entries(overrides)
+      .map(([personId, personOverrides]) => {
+        const nextOverrides = { ...personOverrides };
+        for (const section of sectionsToClear) delete nextOverrides[section];
+        return [personId, nextOverrides] as const;
+      })
+      .filter(([, personOverrides]) => Object.keys(personOverrides).length > 0)
+  );
 }
 
 function getChromeStorageSnapshot(): Promise<Record<string, unknown>> {

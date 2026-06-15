@@ -1,5 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ExtensionStorageService, StoredGedcomImport } from '../extension-storage.service';
 import { parseGedcomText } from './gedcom-parser';
@@ -7,19 +7,24 @@ import { parseGedcomText } from './gedcom-parser';
 @Component({
   selector: 'fsg-gedcom-upload',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [DatePipe, RouterLink],
   templateUrl: './gedcom-upload.component.html',
   styleUrl: './gedcom-upload.component.css'
 })
 export class GedcomUploadComponent implements OnInit {
   private readonly storage = inject(ExtensionStorageService);
 
-  importedGedcom: StoredGedcomImport | null = null;
-  errorMessage = '';
-  isParsing = false;
+  readonly importedGedcom = signal<StoredGedcomImport | null>(null);
+  readonly errorMessage = signal('');
+  readonly isParsing = signal(false);
+  readonly uploadLabel = computed(() => {
+    if (this.isParsing()) return 'Parsing...';
+    if (this.importedGedcom()) return 'Parsed';
+    return 'Select GEDCOM';
+  });
 
   async ngOnInit(): Promise<void> {
-    this.importedGedcom = await this.storage.getGedcomImport();
+    this.importedGedcom.set(await this.storage.getGedcomImport());
   }
 
   async onFileSelected(event: Event): Promise<void> {
@@ -27,8 +32,8 @@ export class GedcomUploadComponent implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
-    this.errorMessage = '';
-    this.isParsing = true;
+    this.errorMessage.set('');
+    this.isParsing.set(true);
 
     try {
       const text = await file.text();
@@ -41,25 +46,19 @@ export class GedcomUploadComponent implements OnInit {
       };
 
       await this.storage.saveGedcomImport(importedGedcom);
-      this.importedGedcom = importedGedcom;
+      this.importedGedcom.set(importedGedcom);
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : 'Could not parse this GEDCOM file.';
+      this.errorMessage.set(error instanceof Error ? error.message : 'Could not parse this GEDCOM file.');
     } finally {
-      this.isParsing = false;
+      this.isParsing.set(false);
       input.value = '';
     }
   }
 
   async clearGedcom(): Promise<void> {
     await this.storage.clearGedcomImport();
-    this.importedGedcom = null;
-    this.errorMessage = '';
-  }
-
-  getUploadLabel(): string {
-    if (this.isParsing) return 'Parsing...';
-    if (this.importedGedcom) return 'Parsed';
-    return 'Select GEDCOM';
+    this.importedGedcom.set(null);
+    this.errorMessage.set('');
   }
 
   formatBytes(bytes: number): string {

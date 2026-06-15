@@ -7,27 +7,33 @@
     </p>
   </section>
 
-  <section class="upload-card" [class.has-file]="importedGedcom" [class.is-parsing]="isParsing">
+  <section class="upload-card" [class.has-file]="importedGedcom()" [class.is-parsing]="isParsing()">
     <div class="upload-copy">
       <p class="kicker">GEDCOM Source</p>
-      <h3>{{ importedGedcom ? 'GEDCOM ready' : 'Choose a .ged file' }}</h3>
-      <p *ngIf="!importedGedcom">
+      <h3>{{ importedGedcom() ? 'GEDCOM ready' : 'Choose a .ged file' }}</h3>
+      @if (!importedGedcom()) {
+      <p>
         No cloud upload, no external service. The file is parsed and stored in this browser extension only.
       </p>
-      <p *ngIf="importedGedcom">
-        {{ importedGedcom.fileName }} is parsed and available for start-person mapping.
+      } @else {
+      <p>
+        {{ importedGedcom()?.fileName }} is parsed and available for start-person mapping.
       </p>
+      }
     </div>
 
-    <label class="upload-target" [class.is-parsing]="isParsing" [class.is-parsed]="importedGedcom && !isParsing">
+    <label class="upload-target" [class.is-parsing]="isParsing()" [class.is-parsed]="importedGedcom() && !isParsing()">
       <input type="file" accept=".ged,.gedcom,text/plain" (change)="onFileSelected($event)">
-      <span>{{ getUploadLabel() }}</span>
+      <span>{{ uploadLabel() }}</span>
     </label>
   </section>
 
-  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  @if (errorMessage()) {
+  <p class="error">{{ errorMessage() }}</p>
+  }
 
-  <section class="summary-grid" *ngIf="importedGedcom as gedcom">
+  @if (importedGedcom(); as gedcom) {
+  <section class="summary-grid">
     <div class="metric">
       <span>People</span>
       <strong>{{ gedcom.document.people.length }}</strong>
@@ -46,7 +52,7 @@
     </div>
   </section>
 
-  <section class="details" *ngIf="importedGedcom as gedcom">
+  <section class="details">
     <div>
       <p class="kicker">Import Summary</p>
       <h3>{{ gedcom.fileName }}</h3>
@@ -70,4 +76,5 @@
       <button type="button" class="clear" (click)="clearGedcom()">Clear GEDCOM</button>
     </div>
   </section>
+  }
 </article>
