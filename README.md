@@ -12,6 +12,7 @@ See `PROJECT_CHECKLIST.md` for the current end-to-end plan and implementation ch
 - The GEDCOM upload page parses and stores normalized GEDCOM JSON locally in extension storage.
 - The results page currently shows GEDCOM-only review cards, with room for FamilySearch and Other comparison columns later.
 - The extension background worker and content script remain read-only and user-controlled.
+- Extension runtime source lives in `src/extension/*.ts`; `npm run extension:scripts` emits the Chrome-required JavaScript files into `public/`.
 - Playwright was removed because FamilySearch blocked Playwright-launched/custom automation browser sessions.
 
 ## Scripts

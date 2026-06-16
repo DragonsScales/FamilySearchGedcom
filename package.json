@@ -7,10 +7,12 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "extension:build": "ng build && npm run extension:check",
-    "extension:check": "node scripts/check-extension.mjs",
+    "extension:build": "npm run extension:scripts && ng build && npm run extension:check",
+    "extension:scripts": "node scripts/run-ts.mjs scripts/build-extension-scripts.ts",
+    "extension:check": "node scripts/run-ts.mjs scripts/check-extension.ts",
     "gedcom:convert": "node scripts/run-ts.mjs src/gedcom/convert.ts",
-    "typecheck": "node scripts/check-typescript.mjs"
+    "strict-types": "node scripts/run-ts.mjs scripts/check-explicit-types.ts",
+    "typecheck": "npm run strict-types && tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.spec.json --noEmit && tsc -p tsconfig.extension.json --noEmit && node scripts/run-ts.mjs scripts/check-typescript.ts"
   },
   "private": true,
   "packageManager": "npm@10.9.8",
