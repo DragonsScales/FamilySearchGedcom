@@ -1,6 +1,10 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ExtensionStorageService, StoredGedcomImport } from '../extension-storage.service';
+import {
+  ExtensionStorageService,
+  StoredGedcomImport,
+  StoredStartPersonMapping
+} from '../extension-storage.service';
 import {
   NormalizedGedcomDocument,
   NormalizedGedcomFact,
@@ -93,6 +97,10 @@ export class GedcomResultsComponent implements OnDestroy, OnInit {
   readonly debugStorageJson = signal('Loading chrome.storage.local...');
   readonly debugImportSummary = signal('Loading typed GEDCOM import...');
   readonly debugLastRefresh = signal('Not refreshed yet.');
+  readonly selectedStartPersonId = signal('');
+  readonly familySearchIdInput = signal('');
+  readonly mappingStatusMessage = signal('');
+  readonly mappingErrorMessage = signal('');
   readonly settings = signal<Record<SettingKey, boolean>>({
     relationshipsOpen: false,
     residencesOpen: false,
@@ -109,14 +117,16 @@ export class GedcomResultsComponent implements OnDestroy, OnInit {
       this.sectionOverrides()
     );
   });
+  readonly selectedStartPerson = computed(() => {
+    const selectedId = this.selectedStartPersonId();
+    if (!selectedId) return null;
+    return this.personCards().find((person) => person.id === selectedId) ?? null;
+  });
+  readonly normalizedFamilySearchId = computed(() => normalizeFamilySearchIdInput(this.familySearchIdInput()));
+  readonly isFamilySearchIdComplete = computed(() => isValidFamilySearchId(this.normalizedFamilySearchId()));
 
   async ngOnInit(): Promise<void> {
     await this.loadStoredGedcom();
-
-    this.delayedRefreshId = window.setTimeout(() => {
-      void this.loadStoredGedcom('automatic 5-second refresh');
-      this.delayedRefreshId = null;
-    }, 5000);
   }
 
   ngOnDestroy(): void {
@@ -125,8 +135,8 @@ export class GedcomResultsComponent implements OnDestroy, OnInit {
     }
   }
 
-  async loadStoredGedcom(reason = 'manual refresh'): Promise<void> {
-    this.debugLastRefresh.set(`Running ${reason}...`);
+  async loadStoredGedcom(): Promise<void> {
+    this.debugLastRefresh.set(`Refreshing`);
 
     await this.refreshStorageDebugPanel();
 
@@ -135,16 +145,18 @@ export class GedcomResultsComponent implements OnDestroy, OnInit {
       this.importedGedcom.set(importedGedcom);
       this.debugImportSummary.set(JSON.stringify(summarizeImport(importedGedcom), null, 2));
       this.loadErrorMessage.set('');
+      await this.loadStartPersonMapping(importedGedcom);
     } catch (error) {
       const message = error instanceof Error
         ? error.message
         : 'The saved GEDCOM could not be loaded.';
       this.loadErrorMessage.set(message);
       this.importedGedcom.set(null);
+      this.clearStartPersonSignals();
       this.debugImportSummary.set(`Error: ${message}`);
     }
 
-    this.debugLastRefresh.set(`${reason} finished at ${new Date().toLocaleTimeString()}`);
+    this.debugLastRefresh.set(`Refresh finished at ${new Date().toLocaleTimeString()}`);
   }
 
   async refreshStorageDebugPanel(): Promise<void> {
@@ -175,6 +187,104 @@ export class GedcomResultsComponent implements OnDestroy, OnInit {
         [section]: open
       }
     }));
+  }
+
+  selectStartPerson(person: PersonCard): void {
+    this.selectedStartPersonId.set(person.id);
+    this.familySearchIdInput.set('');
+    this.mappingErrorMessage.set('');
+    this.mappingStatusMessage.set(`${person.name} is selected. Paste their FamilySearch ID when ready.`);
+    void this.saveStartPersonMapping({ allowIncompleteFamilySearchId: true });
+  }
+
+  onFamilySearchIdInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const formatted = normalizeFamilySearchIdInput(input.value);
+    input.value = formatted;
+    this.familySearchIdInput.set(formatted);
+    this.mappingErrorMessage.set('');
+
+    if (isValidFamilySearchId(formatted)) {
+      void this.saveStartPersonMapping();
+    }
+  }
+
+  async saveStartPersonMapping(
+    options: { allowIncompleteFamilySearchId?: boolean } = {}
+  ): Promise<void> {
+    const selectedPerson = this.selectedStartPerson();
+    const familySearchId = this.normalizedFamilySearchId();
+
+    if (!selectedPerson) {
+      this.mappingErrorMessage.set('Choose a GEDCOM starting person first.');
+      return;
+    }
+
+    if (familySearchId && !isValidFamilySearchId(familySearchId)) {
+      this.mappingErrorMessage.set('FamilySearch IDs use seven letters or numbers, shown as XXXX-XXX.');
+      return;
+    }
+
+    if (!familySearchId && !options.allowIncompleteFamilySearchId) {
+      this.mappingErrorMessage.set('Paste a FamilySearch ID before saving this mapping.');
+      return;
+    }
+
+    const mapping: StoredStartPersonMapping = {
+      gedcomPersonId: selectedPerson.id,
+      familySearchId,
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      await this.storage.saveStartPersonMapping(mapping);
+      this.mappingStatusMessage.set(familySearchId
+        ? `Saved ${selectedPerson.name} as ${familySearchId}.`
+        : `Saved ${selectedPerson.name} as the GEDCOM starting person.`);
+      this.mappingErrorMessage.set('');
+      await this.refreshStorageDebugPanel();
+    } catch (error) {
+      this.mappingErrorMessage.set(error instanceof Error ? error.message : 'Could not save the starting person mapping.');
+    }
+  }
+
+  async clearStartPersonMapping(): Promise<void> {
+    try {
+      await this.storage.clearStartPersonMapping();
+      this.clearStartPersonSignals();
+      this.mappingStatusMessage.set('Starting person mapping cleared.');
+      await this.refreshStorageDebugPanel();
+    } catch (error) {
+      this.mappingErrorMessage.set(error instanceof Error ? error.message : 'Could not clear the starting person mapping.');
+    }
+  }
+
+  private async loadStartPersonMapping(importedGedcom: StoredGedcomImport | null): Promise<void> {
+    if (!importedGedcom) {
+      this.clearStartPersonSignals();
+      return;
+    }
+
+    const mapping = await this.storage.getStartPersonMapping();
+    const hasMappedPerson = Boolean(mapping && importedGedcom.document.people.some((person) => person.id === mapping.gedcomPersonId));
+    if (!mapping || !hasMappedPerson) {
+      this.clearStartPersonSignals();
+      return;
+    }
+
+    this.selectedStartPersonId.set(mapping.gedcomPersonId);
+    this.familySearchIdInput.set(normalizeFamilySearchIdInput(mapping.familySearchId));
+    this.mappingErrorMessage.set('');
+    this.mappingStatusMessage.set(mapping.familySearchId
+      ? `Loaded starting FamilySearch ID ${normalizeFamilySearchIdInput(mapping.familySearchId)}.`
+      : 'Loaded the saved GEDCOM starting person.');
+  }
+
+  private clearStartPersonSignals(): void {
+    this.selectedStartPersonId.set('');
+    this.familySearchIdInput.set('');
+    this.mappingErrorMessage.set('');
+    this.mappingStatusMessage.set('');
   }
 
   private buildPersonCards(
@@ -290,6 +400,16 @@ function clearOverridesForSetting(
       })
       .filter(([, personOverrides]) => Object.keys(personOverrides).length > 0)
   );
+}
+
+function normalizeFamilySearchIdInput(value: string): string {
+  const compact = value.replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 7);
+  if (compact.length <= 4) return compact;
+  return `${compact.slice(0, 4)}-${compact.slice(4)}`;
+}
+
+function isValidFamilySearchId(value: string): boolean {
+  return /^[A-Z0-9]{4}-[A-Z0-9]{3}$/.test(value);
 }
 
 function getChromeStorageSnapshot(): Promise<Record<string, unknown>> {

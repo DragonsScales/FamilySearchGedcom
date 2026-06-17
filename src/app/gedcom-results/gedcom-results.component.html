@@ -1,9 +1,9 @@
 <article class="page">
   <section class="hero">
     <p class="eyebrow">Step 2</p>
-    <h2>GEDCOM review cards</h2>
+    <h2>GEDCOM review</h2>
     <p>
-      This view shows the normalized GEDCOM data first. FamilySearch comparison columns can plug into these same cards once traversal is ready.
+      Review your GEDCOM's data before continuing to ensure it's accurate.
     </p>
   </section>
 
@@ -18,7 +18,7 @@
         <h3>Extension storage snapshot</h3>
         <p class="debug-status">{{ debugLastRefresh() }}</p>
       </div>
-      <button type="button" (click)="loadStoredGedcom('manual refresh')">Refresh Storage</button>
+      <button type="button" (click)="loadStoredGedcom()">Refresh Storage</button>
     </div>
     <div class="debug-grid">
       <div>
@@ -81,15 +81,70 @@
     </details>
   </section>
 
+  <section class="start-mapping-panel">
+    <div>
+      <p class="kicker">Starting Person</p>
+      @if (selectedStartPerson(); as startPerson) {
+      <h3>{{ startPerson.name }}</h3>
+      <p>
+        GEDCOM {{ startPerson.name }} is selected as the person to compare against the chosen FamilySearch ID.
+      </p>
+      } @else {
+      <h3>Select a starting person.</h3>
+      <p>
+        Use the Select Start button on a card, then type or paste the matching FamilySearch ID here.
+      </p>
+      }
+    </div>
+
+    @if (selectedStartPerson()) {
+    <form class="familysearch-id-form" (submit)="$event.preventDefault(); saveStartPersonMapping()">
+      <label for="familysearch-start-id">
+        FamilySearch ID
+        <span>Type or paste FamilySearch id</span>
+      </label>
+      <div class="id-input-row">
+        <input
+          id="familysearch-start-id"
+          type="text"
+          autocomplete="off"
+          inputmode="text"
+          maxlength="8"
+          placeholder="XXXX-XXX"
+          pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{3}"
+          [value]="familySearchIdInput()"
+          (input)="onFamilySearchIdInput($event)"
+        >
+        <button type="submit" [disabled]="!isFamilySearchIdComplete()">Save ID</button>
+        <button type="button" class="ghost-button" (click)="clearStartPersonMapping()">Clear</button>
+      </div>
+      @if (mappingErrorMessage()) {
+      <p class="mapping-error">{{ mappingErrorMessage() }}</p>
+      }
+      @if (mappingStatusMessage()) {
+      <p class="mapping-status">{{ mappingStatusMessage() }}</p>
+      }
+    </form>
+    }
+  </section>
+
   <section class="cards" aria-label="GEDCOM people">
     @for (person of personCards(); track person.id) {
     <article class="person-card">
       <header class="card-header">
         <div>
-          <p class="kicker">GEDCOM {{ person.id }}</p>
           <h3>{{ person.name }}</h3>
         </div>
-        <span class="id-pill">{{ person.id }}</span>
+        <div class="card-actions">
+          <button
+            type="button"
+            class="select-start-button"
+            [class.is-selected]="selectedStartPersonId() === person.id"
+            (click)="selectStartPerson(person)"
+          >
+            {{ selectedStartPersonId() === person.id ? 'Starting Person' : 'Select Start' }}
+          </button>
+        </div>
       </header>
 
       <dl class="fact-lines">
@@ -158,7 +213,6 @@
             @for (parent of person.parents; track parent.id) {
             <li>
               <strong>{{ parent.name }}</strong>
-              <small>{{ parent.id }}</small>
             </li>
             }
           </ul>
@@ -177,7 +231,6 @@
             @for (child of person.children; track child.id) {
             <li>
               <strong>{{ child.name }}</strong>
-              <small>{{ child.id }}</small>
             </li>
             }
           </ul>
@@ -196,7 +249,6 @@
             @for (sibling of person.siblings; track sibling.id) {
             <li>
               <strong>{{ sibling.name }}</strong>
-              <small>{{ sibling.id }}</small>
             </li>
             }
           </ul>

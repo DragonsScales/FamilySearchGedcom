@@ -23,7 +23,14 @@ export interface StoredGedcomImport {
   document: NormalizedGedcomDocument;
 }
 
+export interface StoredStartPersonMapping {
+  gedcomPersonId: string;
+  familySearchId: string;
+  updatedAt: string;
+}
+
 const GEDCOM_IMPORT_KEY = 'familySearchGedcomImport';
+const START_PERSON_MAPPING_KEY = 'familySearchGedcomStartPersonMapping';
 const STORAGE_TIMEOUT_MS = 2500;
 
 @Injectable({ providedIn: 'root' })
@@ -41,6 +48,21 @@ export class ExtensionStorageService {
 
   async clearGedcomImport(): Promise<void> {
     await this.removeStorageValue(GEDCOM_IMPORT_KEY);
+  }
+
+  async getStartPersonMapping(): Promise<StoredStartPersonMapping | null> {
+    const stored = await this.getStorageValue(START_PERSON_MAPPING_KEY);
+    const mapping = isStoredStartPersonMapping(stored) ? stored : null;
+    console.info('[FSG storage] loaded start person mapping', mapping);
+    return mapping;
+  }
+
+  async saveStartPersonMapping(value: StoredStartPersonMapping): Promise<void> {
+    await this.setStorageValue(START_PERSON_MAPPING_KEY, value);
+  }
+
+  async clearStartPersonMapping(): Promise<void> {
+    await this.removeStorageValue(START_PERSON_MAPPING_KEY);
   }
 
   private getStorageValue(key: string): Promise<unknown> {
@@ -151,6 +173,16 @@ function isStoredGedcomImport(value: unknown): value is StoredGedcomImport {
       typeof value === 'object' &&
       'fileName' in value &&
       'document' in value
+  );
+}
+
+function isStoredStartPersonMapping(value: unknown): value is StoredStartPersonMapping {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'gedcomPersonId' in value &&
+      'familySearchId' in value &&
+      'updatedAt' in value
   );
 }
 
