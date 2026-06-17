@@ -2,7 +2,7 @@
 
 Local-first Angular/WebExtension tooling to compare a GEDCOM file against read-only FamilySearch tree data gathered through a normal logged-in browser session.
 
-See `DOCUMENTATION.md` for a medium-level architecture overview and `PROJECT_CHECKLIST.md` for the current end-to-end plan and implementation checklist.
+See `DOCUMENTATION.md` for a medium-level architecture overview, `PROJECT_CHECKLIST.md` for the current end-to-end plan and implementation checklist, and `STYLES.md` for TypeScript and Angular organization rules.
 
 ## Current Architecture
 

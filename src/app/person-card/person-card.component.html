@@ -1,0 +1,190 @@
+<article class="person-card">
+  <header class="card-header">
+    <div>
+      <h3>{{ person.name }}</h3>
+    </div>
+    <div class="card-actions">
+      <button
+        type="button"
+        class="select-start-button"
+        [class.is-selected]="isSelected"
+        (click)="selectStart.emit()"
+      >
+        {{ isSelected ? 'Starting Person' : 'Select Start' }}
+      </button>
+    </div>
+  </header>
+
+  <dl class="fact-lines">
+    <div>
+      <dt>Name</dt>
+      <dd>{{ person.name }}</dd>
+    </div>
+    <div>
+      <dt>Gender</dt>
+      <dd>{{ person.gender }}</dd>
+    </div>
+    <div>
+      <dt>Birth Date</dt>
+      <dd>{{ person.birth?.date || 'Not listed' }}</dd>
+    </div>
+    <div>
+      <dt>Birth Place</dt>
+      <dd>{{ person.birth?.place || 'Not listed' }}</dd>
+    </div>
+    <div>
+      <dt>Death Date</dt>
+      <dd>{{ person.death?.date || 'Not listed' }}</dd>
+    </div>
+    <div>
+      <dt>Death Place</dt>
+      <dd>{{ person.death?.place || 'Not listed' }}</dd>
+    </div>
+    <div>
+      <dt>Christening Date</dt>
+      <dd>{{ person.christening?.date || 'Not listed' }}</dd>
+    </div>
+    <div>
+      <dt>Christening Place</dt>
+      <dd>{{ person.christening?.place || 'Not listed' }}</dd>
+    </div>
+    <div>
+      <dt>Burial Date</dt>
+      <dd>{{ person.burial?.date || 'Not listed' }}</dd>
+    </div>
+    <div>
+      <dt>Burial Place</dt>
+      <dd>{{ person.burial?.place || 'Not listed' }}</dd>
+    </div>
+    <div class="wide">
+      <dt>Alternate Names</dt>
+      <dd>
+        @if (person.alternateNames.length) {
+          @for (name of person.alternateNames; track name) {
+          <span class="name-chip">{{ name }}</span>
+          }
+        } @else {
+          Not listed
+        }
+      </dd>
+    </div>
+  </dl>
+
+  <section class="relationship-grid">
+    <details
+      [open]="person.sections.parentsOpen"
+      (toggle)="onSectionToggle('parentsOpen', $event)"
+    >
+      <summary>Parents <span>{{ person.parents.length }}</span></summary>
+      @if (person.parents.length) {
+      <ul>
+        @for (parent of person.parents; track parent.id) {
+        <li>
+          <strong>{{ parent.name }}</strong>
+        </li>
+        }
+      </ul>
+      } @else {
+      <p class="empty-line">Not listed</p>
+      }
+    </details>
+
+    <details
+      [open]="person.sections.childrenOpen"
+      (toggle)="onSectionToggle('childrenOpen', $event)"
+    >
+      <summary>Children <span>{{ person.children.length }}</span></summary>
+      @if (person.children.length) {
+      <ul>
+        @for (child of person.children; track child.id) {
+        <li>
+          <strong>{{ child.name }}</strong>
+        </li>
+        }
+      </ul>
+      } @else {
+      <p class="empty-line">Not listed</p>
+      }
+    </details>
+
+    <details
+      [open]="person.sections.siblingsOpen"
+      (toggle)="onSectionToggle('siblingsOpen', $event)"
+    >
+      <summary>Siblings <span>{{ person.siblings.length }}</span></summary>
+      @if (person.siblings.length) {
+      <ul>
+        @for (sibling of person.siblings; track sibling.id) {
+        <li>
+          <strong>{{ sibling.name }}</strong>
+        </li>
+        }
+      </ul>
+      } @else {
+      <p class="empty-line">Not listed</p>
+      }
+    </details>
+  </section>
+
+  <section class="bottom-folds">
+    <details
+      [open]="person.sections.residencesOpen"
+      (toggle)="onSectionToggle('residencesOpen', $event)"
+    >
+      <summary>Residences <span>{{ person.residences.length }}</span></summary>
+      @if (person.residences.length) {
+      <div class="fact-list">
+        @for (fact of person.residences; track fact.type + ':' + (fact.date ?? '') + ':' + (fact.place ?? '') + ':' + (fact.value ?? '')) {
+        <div class="mini-fact">
+          <p class="mini-title">{{ fact.label }}</p>
+          @if (fact.date) {
+          <p><strong>Date:</strong> {{ fact.date }}</p>
+          }
+          @if (fact.place) {
+          <p><strong>Place:</strong> {{ fact.place }}</p>
+          }
+          @if (fact.value) {
+          <p><strong>Value:</strong> {{ fact.value }}</p>
+          }
+          @for (note of fact.notes; track note) {
+          <p><strong>Note:</strong> {{ note }}</p>
+          }
+        </div>
+        }
+      </div>
+      } @else {
+      <p class="empty-line">Not listed</p>
+      }
+    </details>
+
+    <details
+      [open]="person.sections.otherOpen"
+      (toggle)="onSectionToggle('otherOpen', $event)"
+    >
+      <summary>Other <span>{{ person.otherFacts.length }}</span></summary>
+      @if (person.otherFacts.length) {
+      <div class="fact-list">
+        @for (fact of person.otherFacts; track fact.type + ':' + (fact.date ?? '') + ':' + (fact.place ?? '') + ':' + (fact.value ?? '')) {
+        <div class="mini-fact">
+          <p class="mini-title">{{ fact.label }}</p>
+          @if (fact.date) {
+          <p><strong>Date:</strong> {{ fact.date }}</p>
+          }
+          @if (fact.place) {
+          <p><strong>Place:</strong> {{ fact.place }}</p>
+          }
+          @if (fact.value) {
+          <p><strong>Value:</strong> {{ fact.value }}</p>
+          }
+          @for (note of fact.notes; track note) {
+          <p><strong>Note:</strong> {{ note }}</p>
+          }
+        </div>
+        }
+      </div>
+      } @else {
+      <p class="empty-line">Not listed</p>
+      }
+    </details>
+  </section>
+</article>

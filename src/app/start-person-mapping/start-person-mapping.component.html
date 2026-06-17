@@ -1,0 +1,46 @@
+<section class="start-mapping-panel">
+  <div>
+    <p class="kicker">Starting Person</p>
+    @if (startPerson) {
+    <h3>{{ startPerson.name }}</h3>
+    <p>
+      GEDCOM {{ startPerson.name }} is selected as the person to compare against the chosen FamilySearch ID.
+    </p>
+    } @else {
+    <h3>Select a starting person.</h3>
+    <p>
+      Use the Select Start button on a card, then type or paste the matching FamilySearch ID here.
+    </p>
+    }
+  </div>
+
+  @if (startPerson) {
+  <form class="familysearch-id-form" (submit)="$event.preventDefault(); saveMapping.emit()">
+    <label for="familysearch-start-id">
+      FamilySearch ID
+      <span>Type or paste FamilySearch id</span>
+    </label>
+    <div class="id-input-row">
+      <input
+        id="familysearch-start-id"
+        type="text"
+        autocomplete="off"
+        inputmode="text"
+        maxlength="8"
+        placeholder="XXXX-XXX"
+        pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{3}"
+        [value]="familySearchId"
+        (input)="onFamilySearchIdInput($event)"
+      >
+      <button type="submit" [disabled]="!isFamilySearchIdComplete">Save ID</button>
+      <button type="button" class="ghost-button" (click)="clearMapping.emit()">Clear</button>
+    </div>
+    @if (errorMessage) {
+    <p class="mapping-error">{{ errorMessage }}</p>
+    }
+    @if (statusMessage) {
+    <p class="mapping-status">{{ statusMessage }}</p>
+    }
+  </form>
+  }
+</section>

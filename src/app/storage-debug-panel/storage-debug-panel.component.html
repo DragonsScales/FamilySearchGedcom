@@ -1,0 +1,24 @@
+<details class="debug-panel">
+  <summary>
+    <span>Storage Debug</span>
+    <small>{{ lastRefresh }}</small>
+  </summary>
+  <div class="debug-header">
+    <div>
+      <p class="kicker">Storage Debug</p>
+      <h3>Extension storage snapshot</h3>
+      <p class="debug-status">{{ lastRefresh }}</p>
+    </div>
+    <button type="button" (click)="refresh.emit()">Refresh Storage</button>
+  </div>
+  <div class="debug-grid">
+    <div>
+      <p class="debug-label">Typed import result</p>
+      <pre>{{ typedImportSummary }}</pre>
+    </div>
+    <div>
+      <p class="debug-label">Raw chrome.storage.local</p>
+      <pre>{{ rawStorageJson }}</pre>
+    </div>
+  </div>
+</details>

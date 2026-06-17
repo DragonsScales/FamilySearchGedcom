@@ -1,0 +1,123 @@
+.debug-panel {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 250, 238, 0.94)),
+    radial-gradient(circle at bottom right, rgba(216, 165, 72, 0.16), transparent 18rem);
+}
+
+.debug-panel > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  list-style: none;
+}
+
+.debug-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.debug-panel > summary span,
+.kicker {
+  color: var(--cedar);
+  font: 900 0.76rem/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.kicker {
+  margin: 0 0 8px;
+}
+
+.debug-panel > summary small {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.debug-panel > summary::after {
+  content: "+";
+  color: var(--cedar);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.debug-panel[open] > summary::after {
+  content: "-";
+}
+
+.debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 20px;
+}
+
+h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 2.2rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.debug-header button {
+  padding: 12px 15px;
+  color: var(--cedar-dark);
+  background: rgba(45, 106, 95, 0.09);
+  border: 1px solid rgba(45, 106, 95, 0.2);
+  border-radius: 999px;
+  cursor: pointer;
+  font: 900 0.7rem/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.debug-label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font: 900 0.66rem/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.debug-status {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+pre {
+  max-height: 340px;
+  margin: 0;
+  overflow: auto;
+  padding: 14px;
+  color: #f6ead2;
+  background: #17262e;
+  border-radius: 16px;
+  font: 0.78rem/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 980px) {
+  .debug-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .debug-grid {
+    grid-template-columns: 1fr;
+  }
+}

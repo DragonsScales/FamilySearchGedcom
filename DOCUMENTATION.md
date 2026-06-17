@@ -49,13 +49,16 @@ flowchart LR
 - `src/app/app.routes.ts`: Routes for GEDCOM upload and results.
 - `src/app/gedcom-upload`: GEDCOM upload UI plus browser-side GEDCOM parser/normalizer.
 - `src/app/gedcom-results`: GEDCOM review cards and current start-person mapping UI.
-- `src/app/extension-storage.service.ts`: Typed wrapper around `chrome.storage.local`.
+- `src/app/chrome-storage.service.ts`: Low-level injectable wrapper around `chrome.storage.local`.
+- `src/app/extension-storage.service.ts`: Typed app storage facade for project-specific keys.
+- `src/Interfaces`: Shared TypeScript interfaces used across routes, components, and services.
 - `src/extension`: Authored TypeScript source for the Chrome background worker and content script.
 - `public/manifest.json`: Chrome MV3 manifest.
 - `public/background.js` and `public/content-script.js`: Generated Chrome runtime files emitted from `src/extension/*.ts`.
 - `scripts`: TypeScript-oriented build/check helpers.
 - `extension/familysearch-collector`: Built unpacked extension output.
 - `PROJECT_CHECKLIST.md`: Product and implementation checklist.
+- `STYLES.md`: Code organization and TypeScript style rules.
 
 ## Angular App
 
@@ -212,9 +215,10 @@ Not done yet:
 
 ## Handoff Notes For Another Agent
 
-- Start with `README.md`, this file, and `PROJECT_CHECKLIST.md`.
+- Start with `README.md`, this file, `PROJECT_CHECKLIST.md`, and `STYLES.md`.
 - Do not reintroduce Playwright for FamilySearch browsing; it was explicitly blocked.
 - Do not automate writes back to FamilySearch.
 - Preserve hash routing for extension pages.
 - Keep generated Chrome runtime JavaScript in `public/`, but edit TypeScript under `src/extension`.
 - Prefer Angular signals/computed state and modern `@if`/`@for` templates.
+- Avoid explicit `any`; use shared interfaces from `src/Interfaces` and narrow `unknown` values with type guards.

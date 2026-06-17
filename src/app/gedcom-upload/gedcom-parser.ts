@@ -1,48 +1,16 @@
-export interface NormalizedGedcomDocument {
-  metadata: {
-    source?: string;
-    version?: string;
-    charset?: string;
-    importedAt: string;
-  };
-  people: NormalizedGedcomPerson[];
-  families: NormalizedGedcomFamily[];
-}
+import type {
+  NormalizedGedcomDocument,
+  NormalizedGedcomFact,
+  NormalizedGedcomFamily,
+  NormalizedGedcomPerson
+} from '../../Interfaces/gedcom.interface';
 
-export interface NormalizedGedcomPerson {
-  id: string;
-  names: Array<{
-    full: string;
-    given?: string;
-    surname?: string;
-  }>;
-  sex?: string;
-  facts: NormalizedGedcomFact[];
-  parentFamilyIds: string[];
-  spouseFamilyIds: string[];
-  relationships: {
-    parents: string[];
-    spouses: string[];
-    children: string[];
-    siblings: string[];
-  };
-}
-
-export interface NormalizedGedcomFamily {
-  id: string;
-  husbandId?: string;
-  wifeId?: string;
-  childIds: string[];
-  facts: NormalizedGedcomFact[];
-}
-
-export interface NormalizedGedcomFact {
-  type: string;
-  date?: string;
-  place?: string;
-  value?: string;
-  notes: string[];
-}
+export type {
+  NormalizedGedcomDocument,
+  NormalizedGedcomFact,
+  NormalizedGedcomFamily,
+  NormalizedGedcomPerson
+} from '../../Interfaces/gedcom.interface';
 
 interface GedcomNode {
   level: number;

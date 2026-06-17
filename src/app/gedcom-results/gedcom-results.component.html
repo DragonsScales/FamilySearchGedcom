@@ -7,30 +7,12 @@
     </p>
   </section>
 
-  <details class="debug-panel">
-    <summary>
-      <span>Storage Debug</span>
-      <small>{{ debugLastRefresh() }}</small>
-    </summary>
-    <div class="debug-header">
-      <div>
-        <p class="kicker">Storage Debug</p>
-        <h3>Extension storage snapshot</h3>
-        <p class="debug-status">{{ debugLastRefresh() }}</p>
-      </div>
-      <button type="button" (click)="loadStoredGedcom()">Refresh Storage</button>
-    </div>
-    <div class="debug-grid">
-      <div>
-        <p class="debug-label">Typed import result</p>
-        <pre>{{ debugImportSummary() }}</pre>
-      </div>
-      <div>
-        <p class="debug-label">Raw chrome.storage.local</p>
-        <pre>{{ debugStorageJson() }}</pre>
-      </div>
-    </div>
-  </details>
+  <fsg-storage-debug-panel
+    [lastRefresh]="debugLastRefresh()"
+    [typedImportSummary]="debugImportSummary()"
+    [rawStorageJson]="debugStorageJson()"
+    (refresh)="loadStoredGedcom()"
+  ></fsg-storage-debug-panel>
 
   @if (!importedGedcom()) {
   <section class="empty-state">
@@ -52,274 +34,31 @@
       <p>{{ personCards().length }} people ready for review.</p>
     </div>
 
-    <details class="settings-panel">
-      <summary>Card Settings</summary>
-      <label class="switch-row">
-        <span>Relationships open by default</span>
-        <input
-          type="checkbox"
-          [checked]="settings().relationshipsOpen"
-          (change)="setDefaultOpen('relationshipsOpen', $event)"
-        >
-      </label>
-      <label class="switch-row">
-        <span>Residences open by default</span>
-        <input
-          type="checkbox"
-          [checked]="settings().residencesOpen"
-          (change)="setDefaultOpen('residencesOpen', $event)"
-        >
-      </label>
-      <label class="switch-row">
-        <span>Other open by default</span>
-        <input
-          type="checkbox"
-          [checked]="settings().otherOpen"
-          (change)="setDefaultOpen('otherOpen', $event)"
-        >
-      </label>
-    </details>
+    <fsg-card-settings
+      [settings]="settings()"
+      (settingChange)="setDefaultOpen($event.setting, $event.open)"
+    ></fsg-card-settings>
   </section>
 
-  <section class="start-mapping-panel">
-    <div>
-      <p class="kicker">Starting Person</p>
-      @if (selectedStartPerson(); as startPerson) {
-      <h3>{{ startPerson.name }}</h3>
-      <p>
-        GEDCOM {{ startPerson.name }} is selected as the person to compare against the chosen FamilySearch ID.
-      </p>
-      } @else {
-      <h3>Select a starting person.</h3>
-      <p>
-        Use the Select Start button on a card, then type or paste the matching FamilySearch ID here.
-      </p>
-      }
-    </div>
-
-    @if (selectedStartPerson()) {
-    <form class="familysearch-id-form" (submit)="$event.preventDefault(); saveStartPersonMapping()">
-      <label for="familysearch-start-id">
-        FamilySearch ID
-        <span>Type or paste FamilySearch id</span>
-      </label>
-      <div class="id-input-row">
-        <input
-          id="familysearch-start-id"
-          type="text"
-          autocomplete="off"
-          inputmode="text"
-          maxlength="8"
-          placeholder="XXXX-XXX"
-          pattern="[A-Za-z0-9]{4}-?[A-Za-z0-9]{3}"
-          [value]="familySearchIdInput()"
-          (input)="onFamilySearchIdInput($event)"
-        >
-        <button type="submit" [disabled]="!isFamilySearchIdComplete()">Save ID</button>
-        <button type="button" class="ghost-button" (click)="clearStartPersonMapping()">Clear</button>
-      </div>
-      @if (mappingErrorMessage()) {
-      <p class="mapping-error">{{ mappingErrorMessage() }}</p>
-      }
-      @if (mappingStatusMessage()) {
-      <p class="mapping-status">{{ mappingStatusMessage() }}</p>
-      }
-    </form>
-    }
-  </section>
+  <fsg-start-person-mapping
+    [startPerson]="selectedStartPerson()"
+    [familySearchId]="familySearchIdInput()"
+    [isFamilySearchIdComplete]="isFamilySearchIdComplete()"
+    [errorMessage]="mappingErrorMessage()"
+    [statusMessage]="mappingStatusMessage()"
+    (familySearchIdChange)="onFamilySearchIdInput($event)"
+    (saveMapping)="saveStartPersonMapping()"
+    (clearMapping)="clearStartPersonMapping()"
+  ></fsg-start-person-mapping>
 
   <section class="cards" aria-label="GEDCOM people">
     @for (person of personCards(); track person.id) {
-    <article class="person-card">
-      <header class="card-header">
-        <div>
-          <h3>{{ person.name }}</h3>
-        </div>
-        <div class="card-actions">
-          <button
-            type="button"
-            class="select-start-button"
-            [class.is-selected]="selectedStartPersonId() === person.id"
-            (click)="selectStartPerson(person)"
-          >
-            {{ selectedStartPersonId() === person.id ? 'Starting Person' : 'Select Start' }}
-          </button>
-        </div>
-      </header>
-
-      <dl class="fact-lines">
-        <div>
-          <dt>Name</dt>
-          <dd>{{ person.name }}</dd>
-        </div>
-        <div>
-          <dt>Gender</dt>
-          <dd>{{ person.gender }}</dd>
-        </div>
-        <div>
-          <dt>Birth Date</dt>
-          <dd>{{ person.birth?.date || 'Not listed' }}</dd>
-        </div>
-        <div>
-          <dt>Birth Place</dt>
-          <dd>{{ person.birth?.place || 'Not listed' }}</dd>
-        </div>
-        <div>
-          <dt>Death Date</dt>
-          <dd>{{ person.death?.date || 'Not listed' }}</dd>
-        </div>
-        <div>
-          <dt>Death Place</dt>
-          <dd>{{ person.death?.place || 'Not listed' }}</dd>
-        </div>
-        <div>
-          <dt>Christening Date</dt>
-          <dd>{{ person.christening?.date || 'Not listed' }}</dd>
-        </div>
-        <div>
-          <dt>Christening Place</dt>
-          <dd>{{ person.christening?.place || 'Not listed' }}</dd>
-        </div>
-        <div>
-          <dt>Burial Date</dt>
-          <dd>{{ person.burial?.date || 'Not listed' }}</dd>
-        </div>
-        <div>
-          <dt>Burial Place</dt>
-          <dd>{{ person.burial?.place || 'Not listed' }}</dd>
-        </div>
-        <div class="wide">
-          <dt>Alternate Names</dt>
-          <dd>
-            @if (person.alternateNames.length) {
-              @for (name of person.alternateNames; track name) {
-              <span class="name-chip">{{ name }}</span>
-              }
-            } @else {
-              Not listed
-            }
-          </dd>
-        </div>
-      </dl>
-
-      <section class="relationship-grid">
-        <details
-          [open]="person.sections.parentsOpen"
-          (toggle)="setSectionOpen(person, 'parentsOpen', $event)"
-        >
-          <summary>Parents <span>{{ person.parents.length }}</span></summary>
-          @if (person.parents.length) {
-          <ul>
-            @for (parent of person.parents; track parent.id) {
-            <li>
-              <strong>{{ parent.name }}</strong>
-            </li>
-            }
-          </ul>
-          } @else {
-          <p class="empty-line">Not listed</p>
-          }
-        </details>
-
-        <details
-          [open]="person.sections.childrenOpen"
-          (toggle)="setSectionOpen(person, 'childrenOpen', $event)"
-        >
-          <summary>Children <span>{{ person.children.length }}</span></summary>
-          @if (person.children.length) {
-          <ul>
-            @for (child of person.children; track child.id) {
-            <li>
-              <strong>{{ child.name }}</strong>
-            </li>
-            }
-          </ul>
-          } @else {
-          <p class="empty-line">Not listed</p>
-          }
-        </details>
-
-        <details
-          [open]="person.sections.siblingsOpen"
-          (toggle)="setSectionOpen(person, 'siblingsOpen', $event)"
-        >
-          <summary>Siblings <span>{{ person.siblings.length }}</span></summary>
-          @if (person.siblings.length) {
-          <ul>
-            @for (sibling of person.siblings; track sibling.id) {
-            <li>
-              <strong>{{ sibling.name }}</strong>
-            </li>
-            }
-          </ul>
-          } @else {
-          <p class="empty-line">Not listed</p>
-          }
-        </details>
-      </section>
-
-      <section class="bottom-folds">
-        <details
-          [open]="person.sections.residencesOpen"
-          (toggle)="setSectionOpen(person, 'residencesOpen', $event)"
-        >
-          <summary>Residences <span>{{ person.residences.length }}</span></summary>
-          @if (person.residences.length) {
-          <div class="fact-list">
-            @for (fact of person.residences; track fact.type + ':' + (fact.date ?? '') + ':' + (fact.place ?? '') + ':' + (fact.value ?? '')) {
-            <div class="mini-fact">
-              <p class="mini-title">{{ fact.label }}</p>
-              @if (fact.date) {
-              <p><strong>Date:</strong> {{ fact.date }}</p>
-              }
-              @if (fact.place) {
-              <p><strong>Place:</strong> {{ fact.place }}</p>
-              }
-              @if (fact.value) {
-              <p><strong>Value:</strong> {{ fact.value }}</p>
-              }
-              @for (note of fact.notes; track note) {
-              <p><strong>Note:</strong> {{ note }}</p>
-              }
-            </div>
-            }
-          </div>
-          } @else {
-          <p class="empty-line">Not listed</p>
-          }
-        </details>
-
-        <details
-          [open]="person.sections.otherOpen"
-          (toggle)="setSectionOpen(person, 'otherOpen', $event)"
-        >
-          <summary>Other <span>{{ person.otherFacts.length }}</span></summary>
-          @if (person.otherFacts.length) {
-          <div class="fact-list">
-            @for (fact of person.otherFacts; track fact.type + ':' + (fact.date ?? '') + ':' + (fact.place ?? '') + ':' + (fact.value ?? '')) {
-            <div class="mini-fact">
-              <p class="mini-title">{{ fact.label }}</p>
-              @if (fact.date) {
-              <p><strong>Date:</strong> {{ fact.date }}</p>
-              }
-              @if (fact.place) {
-              <p><strong>Place:</strong> {{ fact.place }}</p>
-              }
-              @if (fact.value) {
-              <p><strong>Value:</strong> {{ fact.value }}</p>
-              }
-              @for (note of fact.notes; track note) {
-              <p><strong>Note:</strong> {{ note }}</p>
-              }
-            </div>
-            }
-          </div>
-          } @else {
-          <p class="empty-line">Not listed</p>
-          }
-        </details>
-      </section>
-    </article>
+    <fsg-person-card
+      [person]="person"
+      [isSelected]="selectedStartPersonId() === person.id"
+      (selectStart)="selectStartPerson(person)"
+      (sectionOpenChange)="setSectionOpen(person, $event.section, $event.open)"
+    ></fsg-person-card>
     }
   </section>
   }

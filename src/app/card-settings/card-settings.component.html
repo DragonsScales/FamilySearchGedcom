@@ -1,0 +1,27 @@
+<details class="settings-panel">
+  <summary>Card Settings</summary>
+  <label class="switch-row">
+    <span>Relationships open by default</span>
+    <input
+      type="checkbox"
+      [checked]="settings.relationshipsOpen"
+      (change)="onSettingChange('relationshipsOpen', $event)"
+    >
+  </label>
+  <label class="switch-row">
+    <span>Residences open by default</span>
+    <input
+      type="checkbox"
+      [checked]="settings.residencesOpen"
+      (change)="onSettingChange('residencesOpen', $event)"
+    >
+  </label>
+  <label class="switch-row">
+    <span>Other open by default</span>
+    <input
+      type="checkbox"
+      [checked]="settings.otherOpen"
+      (change)="onSettingChange('otherOpen', $event)"
+    >
+  </label>
+</details>

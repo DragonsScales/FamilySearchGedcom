@@ -1,7 +1,8 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ExtensionStorageService, StoredGedcomImport } from '../extension-storage.service';
+import type { StoredGedcomImport } from '../../Interfaces/storage.interface';
+import { ExtensionStorageService } from '../extension-storage.service';
 import { parseGedcomText } from './gedcom-parser';
 
 @Component({

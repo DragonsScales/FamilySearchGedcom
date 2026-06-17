@@ -1,0 +1,28 @@
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { normalizeFamilySearchIdInput } from '../familysearch-id';
+import { PersonCard } from '../../Interfaces/person-card.interface';
+
+@Component({
+  selector: 'fsg-start-person-mapping',
+  standalone: true,
+  templateUrl: './start-person-mapping.component.html',
+  styleUrl: './start-person-mapping.component.css'
+})
+export class StartPersonMappingComponent {
+  @Input() startPerson: PersonCard | null = null;
+  @Input() familySearchId = '';
+  @Input() isFamilySearchIdComplete = false;
+  @Input() errorMessage = '';
+  @Input() statusMessage = '';
+
+  @Output() readonly familySearchIdChange = new EventEmitter<string>();
+  @Output() readonly saveMapping = new EventEmitter<void>();
+  @Output() readonly clearMapping = new EventEmitter<void>();
+
+  onFamilySearchIdInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const formatted = normalizeFamilySearchIdInput(input.value);
+    input.value = formatted;
+    this.familySearchIdChange.emit(formatted);
+  }
+}
