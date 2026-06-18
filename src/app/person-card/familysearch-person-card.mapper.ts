@@ -17,6 +17,9 @@ import type {
   RelatedPersonView
 } from '../../Interfaces/person-card.interface';
 import { buildFamilySearchPersonDetailsUrl } from '../../familysearch-person-url';
+import {
+  findUsableFamilySearchPersonName
+} from '../../familysearch-person-name';
 
 const DEFAULT_CARD_SETTINGS: CardSettings = {
   relationshipsOpen: false,
@@ -32,13 +35,18 @@ export function buildFamilySearchPersonCard(
   const factViews = person.facts.map(toFactView);
   const sex = findFactView(factViews, 'Sex');
   const sections = buildSections(settings, sectionOverrides[person.familySearchId]);
+  const name = findUsableFamilySearchPersonName([
+    findCapturedFactValue(person.facts, 'Name', 'Value'),
+    person.displayName,
+    cleanTitleName(person.title)
+  ]) || person.familySearchId;
 
   return {
     id: person.familySearchId,
     referenceLabel: 'FamilySearch ID',
     referenceId: person.familySearchId,
     referenceUrl: buildFamilySearchPersonDetailsUrl(person.familySearchId),
-    name: person.displayName || person.familySearchId,
+    name,
     gender: sex?.value || 'Not listed',
     alternateNames: [],
     birth: findFactView(factViews, 'Birth'),
@@ -60,6 +68,27 @@ export function buildFamilySearchPersonCard(
     ].includes(fact.label)),
     sections
   };
+}
+
+function findCapturedFactValue(
+  facts: FamilySearchCapturedFact[],
+  factType: string,
+  valueLabel: string
+): string {
+  const fact = facts.find((candidate) => candidate.type.toLowerCase() === factType.toLowerCase());
+  if (!fact) return '';
+
+  const prefix = `${valueLabel}:`;
+  const value = fact.values.find((candidate) => candidate.toLowerCase().startsWith(prefix.toLowerCase()));
+  return value?.slice(prefix.length).trim() ?? '';
+}
+
+function cleanTitleName(value: string): string {
+  return value
+    .replace(/\s*\|\s*FamilySearch.*$/i, '')
+    .replace(/\s*\u2022\s*Person\s*\u2022\s*Family Tree.*$/i, '')
+    .replace(/\s*\([^)]*\)\s*$/i, '')
+    .trim();
 }
 
 export function buildFamilySearchPersonCards(

@@ -23,20 +23,42 @@
     return /^[A-Z0-9-]+$/.test(normalized) ? normalized : "";
   }
 
+  // src/familysearch-person-name.ts
+  var FAMILYSEARCH_PERSON_ID_PATTERN = /\b[A-Z0-9]{4}-[A-Z0-9]{3}\b/i;
+  var FAMILYSEARCH_PERSON_LIFE_DATE_SOURCE = "(?:(?:\\d{1,2}\\s+)?[A-Za-z.]+\\s+)*\\d{3,4}";
+  var FAMILYSEARCH_PERSON_LIFE_ENDPOINT_SOURCE = `(?:${FAMILYSEARCH_PERSON_LIFE_DATE_SOURCE}|Living|Deceased)`;
+  var FAMILYSEARCH_PERSON_LIFE_DETAIL_SOURCE = `(?:Living|Deceased|${FAMILYSEARCH_PERSON_LIFE_DATE_SOURCE}\\s*[\\u2013-]\\s*${FAMILYSEARCH_PERSON_LIFE_ENDPOINT_SOURCE}?|[\\u2013-]\\s*${FAMILYSEARCH_PERSON_LIFE_ENDPOINT_SOURCE})`;
+  var FAMILYSEARCH_PERSON_LIFE_DETAIL_PATTERN = new RegExp(`^${FAMILYSEARCH_PERSON_LIFE_DETAIL_SOURCE}$`, "i");
+  var FAMILYSEARCH_PERSON_HEADING_TRAILER_PATTERN = new RegExp(
+    `\\s+(?:Male|Female|Unknown)\\s+${FAMILYSEARCH_PERSON_LIFE_DETAIL_SOURCE}\\s+\\u2022\\s+[A-Z0-9]{4}-[A-Z0-9]{3}$`,
+    "i"
+  );
+  var FAMILYSEARCH_PERSON_GENDER_LIFE_TRAILER_PATTERN = new RegExp(
+    `\\s+(?:Male|Female|Unknown)\\s+${FAMILYSEARCH_PERSON_LIFE_DETAIL_SOURCE}$`,
+    "i"
+  );
+  var FAMILYSEARCH_PERSON_GENDER_TRAILER_PATTERN = /\s+(?:Male|Female|Unknown)\s+.+$/i;
+  var FAMILYSEARCH_NON_PERSON_NAME_PATTERN = /^(Male|Female|Unknown|Living|Deceased|Preferred|Not Preferred|Family Tree|Search|Memories|Get Involved|Activities|Temple|Tree|Recents|Find|Following|Person List|My Contributions|Manage Trees|Help Others|View Tree|View Relationship|Follow|About|Vitals|Other|Family|Sources(?: \(\d+\))?|Collaborate(?: \(\d+\))?|Memories(?: \(\d+\))?|Time Line|Ordinances|Detail View|Other Information|Alternate Names|Events|Facts|Family Members|Show All Family Members|Spouses and Children|Parents and Siblings|Other Relationships|Brief Life History|Children(?: \(\d+\))?|Parents|Siblings|Spouses|Add|Add Event|Add Fact|Add Alternate Name|Add Child|Add Spouse|Add Parent|Add Other Relationship)$/i;
+  function cleanFamilySearchPersonName(value) {
+    return cleanFamilySearchNameText(value).replace(/^Value:\s*/i, "").replace(FAMILYSEARCH_PERSON_HEADING_TRAILER_PATTERN, "").replace(FAMILYSEARCH_PERSON_GENDER_LIFE_TRAILER_PATTERN, "").replace(FAMILYSEARCH_PERSON_GENDER_TRAILER_PATTERN, "").replace(/\s+\u2022\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+\u2022\s*$/i, "").trim();
+  }
+  function looksLikeFamilySearchPersonName(value) {
+    const cleaned = cleanFamilySearchPersonName(value);
+    if (!cleaned || cleaned.length < 2 || cleaned.length > 80) return false;
+    if (FAMILYSEARCH_NON_PERSON_NAME_PATTERN.test(cleaned)) return false;
+    if (isFamilySearchPersonLifeDetail(cleaned)) return false;
+    if (FAMILYSEARCH_PERSON_ID_PATTERN.test(cleaned)) return false;
+    if (/\d/.test(cleaned)) return false;
+    return /[A-Za-z]/.test(cleaned);
+  }
+  function isFamilySearchPersonLifeDetail(value) {
+    return FAMILYSEARCH_PERSON_LIFE_DETAIL_PATTERN.test(cleanFamilySearchNameText(value));
+  }
+  function cleanFamilySearchNameText(value) {
+    return String(value ?? "").replace(/\s+/g, " ").trim();
+  }
+
   // src/extension/content-script.ts
-  var FAMILYSEARCH_ID_PATTERN = /\b[A-Z0-9]{4}-[A-Z0-9]{3}\b/g;
-  var PERSON_LIFE_DATE_SOURCE = "(?:\\d{1,2}\\s+[A-Za-z]+\\s+)?\\d{3,4}";
-  var PERSON_LIFE_ENDPOINT_SOURCE = `(?:${PERSON_LIFE_DATE_SOURCE}|Living|Deceased)`;
-  var PERSON_LIFE_DETAIL_SOURCE = `(?:Living|Deceased|${PERSON_LIFE_DATE_SOURCE}\\s*[\u2013-]\\s*${PERSON_LIFE_ENDPOINT_SOURCE}?|[\u2013-]\\s*${PERSON_LIFE_ENDPOINT_SOURCE})`;
-  var PERSON_LIFE_DETAIL_PATTERN = new RegExp(`^${PERSON_LIFE_DETAIL_SOURCE}$`, "i");
-  var PERSON_HEADING_TRAILER_PATTERN = new RegExp(
-    `\\s+(?:Male|Female|Unknown)\\s+${PERSON_LIFE_DETAIL_SOURCE}\\s+\u2022\\s+[A-Z0-9]{4}-[A-Z0-9]{3}$`,
-    "i"
-  );
-  var PERSON_GENDER_LIFE_TRAILER_PATTERN = new RegExp(
-    `\\s+(?:Male|Female|Unknown)\\s+${PERSON_LIFE_DETAIL_SOURCE}$`,
-    "i"
-  );
   var FACT_LABELS = [
     "Name",
     "Sex",
@@ -240,7 +262,7 @@
     }
     const titleName = cleanTitleName(document.title);
     if (titleName && !/familysearch/i.test(titleName)) return titleName;
-    return lines.find((line) => line.length > 2 && line.length < 100 && !isShellHeading(line)) ?? "";
+    return lines.map(cleanPersonName).find((line) => looksLikePersonName(line) && !isShellHeading(line)) ?? "";
   }
   function hasVisiblePersonHeading(root, lines) {
     if (extractHeaderPersonName(lines)) return true;
@@ -523,7 +545,7 @@
     return "";
   }
   function cleanPersonName(value) {
-    return cleanText(value).replace(PERSON_HEADING_TRAILER_PATTERN, "").replace(PERSON_GENDER_LIFE_TRAILER_PATTERN, "").replace(/\s+•\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+•\s*$/i, "").trim();
+    return cleanFamilySearchPersonName(value);
   }
   function cleanTitleName(value) {
     return cleanText(value).replace(/\s*\|\s*FamilySearch.*$/i, "").replace(/\s*•\s*Person\s*•\s*Family Tree.*$/i, "").replace(/\s*\([^)]*\)\s*$/i, "").trim();
@@ -561,21 +583,10 @@
     return "";
   }
   function looksLikePersonName(value) {
-    if (!value || value.length < 2 || value.length > 80) return false;
-    if (/^(Male|Female|Unknown|Living|•)$/i.test(value)) return false;
-    if (isPersonLifeDetail(value)) return false;
-    if (FAMILYSEARCH_ID_PATTERN.test(value)) {
-      FAMILYSEARCH_ID_PATTERN.lastIndex = 0;
-      return false;
-    }
-    FAMILYSEARCH_ID_PATTERN.lastIndex = 0;
-    if (isShellHeading(value)) return false;
-    if (/^(birth|christening|death|burial|residence|sources|memories|collaborate|time line|print options|quality score:|not available at this time)$/i.test(value)) return false;
-    if (/^\d{3,4}$/.test(value)) return false;
-    return /[A-Za-z]/.test(value);
+    return looksLikeFamilySearchPersonName(value) && !isShellHeading(value);
   }
   function isPersonLifeDetail(value) {
-    return PERSON_LIFE_DETAIL_PATTERN.test(cleanText(value));
+    return isFamilySearchPersonLifeDetail(value);
   }
   function chooseRelationshipName(existingName, nextName) {
     if (!existingName) return nextName;

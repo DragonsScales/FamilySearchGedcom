@@ -4,6 +4,11 @@ import {
   extractFamilySearchPersonIdFromUrl,
   normalizeFamilySearchPersonId
 } from '../familysearch-person-url';
+import {
+  cleanFamilySearchPersonName,
+  isFamilySearchPersonLifeDetail,
+  looksLikeFamilySearchPersonName
+} from '../familysearch-person-name';
 import type {
   FamilySearchPageDebugLink,
   FamilySearchPageDebugSnapshot
@@ -97,18 +102,6 @@ declare const chrome: {
 };
 
 const FAMILYSEARCH_ID_PATTERN = /\b[A-Z0-9]{4}-[A-Z0-9]{3}\b/g;
-const PERSON_LIFE_DATE_SOURCE = '(?:\\d{1,2}\\s+[A-Za-z]+\\s+)?\\d{3,4}';
-const PERSON_LIFE_ENDPOINT_SOURCE = `(?:${PERSON_LIFE_DATE_SOURCE}|Living|Deceased)`;
-const PERSON_LIFE_DETAIL_SOURCE = `(?:Living|Deceased|${PERSON_LIFE_DATE_SOURCE}\\s*[–-]\\s*${PERSON_LIFE_ENDPOINT_SOURCE}?|[–-]\\s*${PERSON_LIFE_ENDPOINT_SOURCE})`;
-const PERSON_LIFE_DETAIL_PATTERN = new RegExp(`^${PERSON_LIFE_DETAIL_SOURCE}$`, 'i');
-const PERSON_HEADING_TRAILER_PATTERN = new RegExp(
-  `\\s+(?:Male|Female|Unknown)\\s+${PERSON_LIFE_DETAIL_SOURCE}\\s+•\\s+[A-Z0-9]{4}-[A-Z0-9]{3}$`,
-  'i'
-);
-const PERSON_GENDER_LIFE_TRAILER_PATTERN = new RegExp(
-  `\\s+(?:Male|Female|Unknown)\\s+${PERSON_LIFE_DETAIL_SOURCE}$`,
-  'i'
-);
 const FACT_LABELS = [
   'Name',
   'Sex',
@@ -359,7 +352,9 @@ function extractDisplayName(root: HTMLElement, lines: string[]): string {
   const titleName = cleanTitleName(document.title);
   if (titleName && !/familysearch/i.test(titleName)) return titleName;
 
-  return lines.find((line) => line.length > 2 && line.length < 100 && !isShellHeading(line)) ?? '';
+  return lines
+    .map(cleanPersonName)
+    .find((line) => looksLikePersonName(line) && !isShellHeading(line)) ?? '';
 }
 
 function hasVisiblePersonHeading(root: HTMLElement, lines: string[]): boolean {
@@ -741,13 +736,7 @@ function extractHeaderPersonName(lines: string[]): string {
 }
 
 function cleanPersonName(value: string): string {
-  return cleanText(value)
-    .replace(PERSON_HEADING_TRAILER_PATTERN, '')
-    .replace(PERSON_GENDER_LIFE_TRAILER_PATTERN, '')
-    .replace(/\s+•\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, '')
-    .replace(/\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, '')
-    .replace(/\s+•\s*$/i, '')
-    .trim();
+  return cleanFamilySearchPersonName(value);
 }
 
 function cleanTitleName(value: string): string {
@@ -796,23 +785,11 @@ function inferNameNearId(lines: string[], index: number, personId: string): stri
 }
 
 function looksLikePersonName(value: string): boolean {
-  if (!value || value.length < 2 || value.length > 80) return false;
-  if (/^(Male|Female|Unknown|Living|•)$/i.test(value)) return false;
-  if (isPersonLifeDetail(value)) return false;
-  if (FAMILYSEARCH_ID_PATTERN.test(value)) {
-    FAMILYSEARCH_ID_PATTERN.lastIndex = 0;
-    return false;
-  }
-  FAMILYSEARCH_ID_PATTERN.lastIndex = 0;
-
-  if (isShellHeading(value)) return false;
-  if (/^(birth|christening|death|burial|residence|sources|memories|collaborate|time line|print options|quality score:|not available at this time)$/i.test(value)) return false;
-  if (/^\d{3,4}$/.test(value)) return false;
-  return /[A-Za-z]/.test(value);
+  return looksLikeFamilySearchPersonName(value) && !isShellHeading(value);
 }
 
 function isPersonLifeDetail(value: string): boolean {
-  return PERSON_LIFE_DETAIL_PATTERN.test(cleanText(value));
+  return isFamilySearchPersonLifeDetail(value);
 }
 
 function chooseRelationshipName(existingName: string, nextName: string): string {
