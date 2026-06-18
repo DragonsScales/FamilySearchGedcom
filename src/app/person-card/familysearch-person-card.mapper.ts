@@ -16,6 +16,7 @@ import type {
   PersonCard,
   RelatedPersonView
 } from '../../Interfaces/person-card.interface';
+import { buildFamilySearchPersonDetailsUrl } from '../../familysearch-person-url';
 
 const DEFAULT_CARD_SETTINGS: CardSettings = {
   relationshipsOpen: false,
@@ -36,6 +37,7 @@ export function buildFamilySearchPersonCard(
     id: person.familySearchId,
     referenceLabel: 'FamilySearch ID',
     referenceId: person.familySearchId,
+    referenceUrl: buildFamilySearchPersonDetailsUrl(person.familySearchId),
     name: person.displayName || person.familySearchId,
     gender: sex?.value || 'Not listed',
     alternateNames: [],

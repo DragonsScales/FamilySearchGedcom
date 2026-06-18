@@ -25,13 +25,13 @@
 
   // src/extension/background.ts
   var STORAGE_KEY = "familySearchGedcomCollectorState";
+  var START_PERSON_MAPPING_KEY = "familySearchGedcomStartPersonMapping";
   var EXTENSION_APP_URL = "index.html#/gedcom";
   var ALARM_CAPTURE_PAGE = "familysearchCollector.capturePage";
   var ALARM_NEXT_NAVIGATION = "familysearchCollector.nextNavigation";
   var MIN_DELAY_MS = 1e3;
   var MAX_DELAY_MS = 6e4;
   var PERSON_RETRIEVAL_TIMEOUT_MS = 3e4;
-  var PERSON_RETRIEVAL_SETTLE_MS = 2e4;
   function defaultState() {
     return {
       running: false,
@@ -107,13 +107,30 @@
     };
   }
   async function getActiveTab() {
-    const tabs = await tabsQuery({ active: true, currentWindow: true });
-    const [tab] = tabs;
-    if (!tab?.id) throw new Error("No active browser tab found.");
-    if (!tab.url?.startsWith("https://www.familysearch.org/")) {
-      throw new Error("Open a FamilySearch page before using the collector.");
+    const activeTabs = await tabsQuery({ active: true, currentWindow: true });
+    const activeFamilySearchTab = activeTabs.find(isFamilySearchTab);
+    if (activeFamilySearchTab?.id && activeFamilySearchTab.url) {
+      return { id: activeFamilySearchTab.id, url: activeFamilySearchTab.url };
     }
-    return { id: tab.id, url: tab.url };
+    const currentWindowFamilySearchTabs = await tabsQuery({
+      currentWindow: true,
+      url: "https://www.familysearch.org/*"
+    });
+    const [currentWindowFamilySearchTab] = currentWindowFamilySearchTabs.filter(isFamilySearchTab);
+    if (currentWindowFamilySearchTab?.id && currentWindowFamilySearchTab.url) {
+      return { id: currentWindowFamilySearchTab.id, url: currentWindowFamilySearchTab.url };
+    }
+    const familySearchTabs = await tabsQuery({ url: "https://www.familysearch.org/*" });
+    const [familySearchTab] = familySearchTabs.filter(isFamilySearchTab);
+    if (familySearchTab?.id && familySearchTab.url) {
+      return { id: familySearchTab.id, url: familySearchTab.url };
+    }
+    const mappedFamilySearchId = await loadMappedFamilySearchId();
+    if (mappedFamilySearchId) return openTraversalStartTab(mappedFamilySearchId);
+    throw new Error("Save a FamilySearch starting person in Mapping before using the collector.");
+  }
+  function isFamilySearchTab(tab) {
+    return Boolean(tab.id && tab.url?.startsWith("https://www.familysearch.org/"));
   }
   async function captureActiveTab() {
     const tab = await getActiveTab();
@@ -132,11 +149,6 @@
       if (tab.status !== "complete") {
         await waitForTabComplete(tab.id);
       }
-      console.info("[FSG retrieval] waiting before capturing newly opened FamilySearch tab", {
-        familySearchId,
-        delayMs: PERSON_RETRIEVAL_SETTLE_MS
-      });
-      await delay(PERSON_RETRIEVAL_SETTLE_MS);
       const response = await sendCaptureMessage(tab.id, familySearchId);
       if (!response.ok || !response.capture) {
         throw new Error(response.error ?? "The FamilySearch person page could not be captured.");
@@ -169,7 +181,14 @@
     };
   }
   async function startTraversal(payload = {}) {
-    const tab = await getActiveTab();
+    if (payload.accountAccessConsent !== true) {
+      throw new Error("Confirm that the extension can use your logged-in FamilySearch session before starting traversal.");
+    }
+    const rootFamilySearchId = normalizePersonId(payload.familySearchId ?? payload.personId) || await loadMappedFamilySearchId();
+    if (!rootFamilySearchId) {
+      throw new Error("Save a FamilySearch starting person in Mapping before starting traversal.");
+    }
+    const tab = await openTraversalStartTab(rootFamilySearchId);
     const existing = await loadState();
     const payloadDelaySeconds = Number(payload.delaySeconds);
     const payloadDelayMs = Number(payload.delayMs);
@@ -186,11 +205,28 @@
       queue: [],
       visitedPersonIds: existing.records.map((record) => record.person?.familySearchId).filter((id) => Boolean(id)),
       options,
-      lastEvent: "Traversal started from the active tab."
+      lastEvent: `Traversal started from ${rootFamilySearchId}.`
     });
-    const captured = await captureAndStore(tab.id, { source: "traversal-start" });
+    const captured = await captureAndStore(tab.id, {
+      source: "traversal-start",
+      expectedFamilySearchId: rootFamilySearchId
+    });
     scheduleNextNavigation(captured.options.delayMs);
     return summarizeState(captured);
+  }
+  async function loadMappedFamilySearchId() {
+    const stored = await storageGet(START_PERSON_MAPPING_KEY);
+    const mapping = isRecord(stored[START_PERSON_MAPPING_KEY]) ? stored[START_PERSON_MAPPING_KEY] : {};
+    return normalizePersonId(mapping["familySearchId"]);
+  }
+  async function openTraversalStartTab(familySearchId) {
+    const url = buildFamilySearchPersonDetailsUrl(familySearchId);
+    const tab = await tabsCreate({ url, active: false });
+    if (!tab.id) throw new Error("Could not open the FamilySearch traversal start page.");
+    if (tab.status !== "complete") {
+      await waitForTabComplete(tab.id);
+    }
+    return { id: tab.id, url };
   }
   async function stopTraversal() {
     const state = await loadState();
@@ -209,7 +245,7 @@
     return summarizeState(reset);
   }
   async function captureAndStore(tabId, metadata = {}) {
-    const response = await sendCaptureMessage(tabId);
+    const response = await sendCaptureMessage(tabId, metadata.expectedFamilySearchId);
     if (!response.ok || !response.capture) {
       throw new Error(response.error ?? "The active page could not be captured.");
     }
@@ -342,9 +378,9 @@
     return captured;
   }
   function scheduleTraversalAlarm(name, delayMs) {
-    const delay2 = Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delayMs));
+    const delay = Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delayMs));
     chrome.alarms.clear(name, () => {
-      chrome.alarms.create(name, { when: Date.now() + delay2 });
+      chrome.alarms.create(name, { when: Date.now() + delay });
     });
   }
   function clearTraversalAlarms() {
@@ -497,9 +533,6 @@
       };
       chrome.tabs.onUpdated.addListener(listener);
     });
-  }
-  function delay(milliseconds) {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
   function tabsSendMessage(tabId, message) {
     return new Promise((resolve, reject) => {

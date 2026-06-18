@@ -3,7 +3,18 @@
     <div>
       <h3>{{ person.name }}</h3>
       @if (person.referenceId) {
+      @if (person.referenceUrl) {
+      <a
+        class="id-pill"
+        [href]="person.referenceUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ person.referenceLabel || 'ID' }} {{ person.referenceId }}
+      </a>
+      } @else {
       <p class="id-pill">{{ person.referenceLabel || 'ID' }} {{ person.referenceId }}</p>
+      }
       }
     </div>
     @if (showStartAction) {

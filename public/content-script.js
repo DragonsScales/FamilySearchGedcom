@@ -25,10 +25,16 @@
 
   // src/extension/content-script.ts
   var FAMILYSEARCH_ID_PATTERN = /\b[A-Z0-9]{4}-[A-Z0-9]{3}\b/g;
-  var PERSON_LIFE_DETAIL_SOURCE = "(?:Living|Deceased|(?:\\d{1,2}\\s+[A-Za-z]+\\s+)?\\d{3,4}\\s*[\u2013-]\\s*(?:(?:\\d{1,2}\\s+[A-Za-z]+\\s+)?\\d{3,4})?|[\u2013-]\\s*(?:\\d{1,2}\\s+[A-Za-z]+\\s+)?\\d{3,4})";
+  var PERSON_LIFE_DATE_SOURCE = "(?:\\d{1,2}\\s+[A-Za-z]+\\s+)?\\d{3,4}";
+  var PERSON_LIFE_ENDPOINT_SOURCE = `(?:${PERSON_LIFE_DATE_SOURCE}|Living|Deceased)`;
+  var PERSON_LIFE_DETAIL_SOURCE = `(?:Living|Deceased|${PERSON_LIFE_DATE_SOURCE}\\s*[\u2013-]\\s*${PERSON_LIFE_ENDPOINT_SOURCE}?|[\u2013-]\\s*${PERSON_LIFE_ENDPOINT_SOURCE})`;
   var PERSON_LIFE_DETAIL_PATTERN = new RegExp(`^${PERSON_LIFE_DETAIL_SOURCE}$`, "i");
   var PERSON_HEADING_TRAILER_PATTERN = new RegExp(
     `\\s+(?:Male|Female|Unknown)\\s+${PERSON_LIFE_DETAIL_SOURCE}\\s+\u2022\\s+[A-Z0-9]{4}-[A-Z0-9]{3}$`,
+    "i"
+  );
+  var PERSON_GENDER_LIFE_TRAILER_PATTERN = new RegExp(
+    `\\s+(?:Male|Female|Unknown)\\s+${PERSON_LIFE_DETAIL_SOURCE}$`,
     "i"
   );
   var FACT_LABELS = [
@@ -138,7 +144,7 @@
     if (expectedFamilySearchId && !hasExpectedFamilySearchId) {
       return readiness(false, `expected ID ${expectedFamilySearchId} is not visible yet`, expectedFamilySearchId, hasExpectedFamilySearchId, loadingSkeletonCount);
     }
-    if (loadingSkeletonCount > 0 && !hasPersonHeading && !hasPersonLinks) {
+    if (loadingSkeletonCount > 0) {
       return readiness(false, `still showing ${loadingSkeletonCount} loading skeleton element(s)`, expectedFamilySearchId, hasExpectedFamilySearchId, loadingSkeletonCount);
     }
     if (!hasCaptureablePersonDetails) {
@@ -433,7 +439,7 @@
   function toFactValues(label, rawValues) {
     const cleanedValues = rawValues.filter((value) => !isFactNoise(value));
     if (cleanedValues.length === 0) return [];
-    if (label === "Name") return [`Value: ${cleanedValues[0]}`];
+    if (label === "Name") return [`Value: ${cleanPersonName(cleanedValues[0]) || cleanedValues[0]}`];
     if (label === "Sex") return [`Value: ${cleanedValues[0]}`];
     if (label === "Custom Event") {
       return [
@@ -517,7 +523,7 @@
     return "";
   }
   function cleanPersonName(value) {
-    return cleanText(value).replace(PERSON_HEADING_TRAILER_PATTERN, "").replace(/\s+•\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+•\s*$/i, "").trim();
+    return cleanText(value).replace(PERSON_HEADING_TRAILER_PATTERN, "").replace(PERSON_GENDER_LIFE_TRAILER_PATTERN, "").replace(/\s+•\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+[A-Z0-9]{4}-[A-Z0-9]{3}$/i, "").replace(/\s+•\s*$/i, "").trim();
   }
   function cleanTitleName(value) {
     return cleanText(value).replace(/\s*\|\s*FamilySearch.*$/i, "").replace(/\s*•\s*Person\s*•\s*Family Tree.*$/i, "").replace(/\s*\([^)]*\)\s*$/i, "").trim();

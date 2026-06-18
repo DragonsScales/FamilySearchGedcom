@@ -30,6 +30,7 @@ export interface PersonCard {
   id: string;
   referenceLabel?: string;
   referenceId?: string;
+  referenceUrl?: string;
   name: string;
   gender: string;
   alternateNames: string[];

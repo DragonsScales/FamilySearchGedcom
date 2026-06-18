@@ -40,7 +40,16 @@ h3 {
   border-radius: 999px;
   font: 900 0.68rem/1 ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0.12em;
+  text-decoration: none;
   text-transform: uppercase;
+}
+
+a.id-pill {
+  cursor: pointer;
+}
+
+a.id-pill:hover {
+  background: #f2cc7b;
 }
 
 .name-chip {

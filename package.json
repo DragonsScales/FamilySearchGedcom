@@ -4,10 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "npm run extension:scripts && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "extension:build": "npm run extension:scripts && ng build && npm run extension:check",
+    "extension:build": "npm run build && npm run extension:check",
     "extension:scripts": "node scripts/run-ts.mjs scripts/build-extension-scripts.ts",
     "extension:check": "node scripts/run-ts.mjs scripts/check-extension.ts",
     "gedcom:convert": "node scripts/run-ts.mjs src/gedcom/convert.ts",
