@@ -8,9 +8,8 @@ Target user flow:
 
 - Click the extension icon to open the extension's Angular app page.
 - Upload or select a GEDCOM file in the extension.
-- Open a starting FamilySearch person page in a normal logged-in browser session.
-- Click a compare action for the current FamilySearch person.
-- Map the current FamilySearch person to the corresponding GEDCOM person.
+- Select the corresponding GEDCOM starting person.
+- Paste the matching FamilySearch person ID in the mapping route.
 - Use the GEDCOM relationship graph to decide which branches need to be checked: parents, spouses, children, siblings, and later other supported relationships/events.
 - Visit related FamilySearch person pages using direct URLs like `https://www.familysearch.org/en/tree/person/details/{id}`.
 - Store discovered FamilySearch IDs and traversal state so the extension can backtrack and avoid revisiting pages.
@@ -72,11 +71,12 @@ Target user flow:
 
 ## Milestone 3: Start-Person Mapping
 
-- [ ] Capture current FamilySearch person ID and display name.
-- [ ] Let the user choose the corresponding GEDCOM person.
+- [x] Enter the starting FamilySearch person ID manually.
+- [x] Retrieve the entered FamilySearch person and show its details card.
+- [x] Let the user choose the corresponding GEDCOM person.
 - [ ] Add simple GEDCOM person search by name/date.
-- [ ] Store FamilySearch ID to GEDCOM person ID mappings.
-- [ ] Show current mapping status before comparison starts.
+- [x] Store FamilySearch ID to GEDCOM person ID mappings.
+- [x] Show current mapping status before comparison starts.
 - [ ] Allow mapping corrections.
 
 ## Milestone 4: GEDCOM-Guided Traversal

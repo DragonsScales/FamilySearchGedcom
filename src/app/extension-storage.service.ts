@@ -5,7 +5,7 @@ import type {
 } from '../Interfaces/storage.interface';
 import { ChromeStorageService } from './chrome-storage.service';
 
-const GEDCOM_IMPORT_KEY = 'familySearchGedcomImport';
+const GEDCOM_IMPORT_KEY = 'gedcomImport';
 const START_PERSON_MAPPING_KEY = 'familySearchGedcomStartPersonMapping';
 
 @Injectable({ providedIn: 'root' })

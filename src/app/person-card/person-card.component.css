@@ -29,6 +29,20 @@ h3 {
   gap: 9px;
 }
 
+.id-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  color: #173027;
+  background: rgba(242, 204, 123, 0.78);
+  border-radius: 999px;
+  font: 900 0.68rem/1 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .name-chip {
   display: inline-flex;
   align-items: center;

@@ -8,7 +8,7 @@ The long-term flow is:
 
 1. Upload a GEDCOM file into the extension app.
 2. Select the corresponding starting person in the GEDCOM results view.
-3. Paste or capture that person's FamilySearch ID.
+3. Paste that person's FamilySearch ID in the mapping route and retrieve the matching FamilySearch person details.
 4. Traverse only the FamilySearch branches the GEDCOM says are relevant.
 5. Store captured FamilySearch snapshots locally.
 6. Compare normalized GEDCOM data against normalized FamilySearch data.
@@ -38,6 +38,7 @@ flowchart LR
   Tab --> Content["Content Script Capture"]
   Content --> Background
   Background --> Storage
+  Mapping --> Storage
   Storage --> Compare["Future Comparison Engine"]
 ```
 
@@ -46,11 +47,14 @@ flowchart LR
 - `src/app`: Angular extension app.
 - `src/app/app.html`: Current app shell. It uses a top quick nav and a `main.workspace` area.
 - `src/app/app.config.ts`: Angular app config with `withHashLocation()`.
-- `src/app/app.routes.ts`: Routes for GEDCOM upload and results.
+- `src/app/app.routes.ts`: Routes for GEDCOM upload, GEDCOM results, and start-person mapping.
 - `src/app/gedcom-upload`: GEDCOM upload UI plus browser-side GEDCOM parser/normalizer.
-- `src/app/gedcom-results`: GEDCOM review cards and current start-person mapping UI.
+- `src/app/gedcom-results`: GEDCOM review cards, card settings, and GEDCOM starting-person selection.
+- `src/app/mapping`: Mapping route that connects the selected GEDCOM starting person to a manually entered FamilySearch ID and displays retrieved FamilySearch details.
 - `src/app/chrome-storage.service.ts`: Low-level injectable wrapper around `chrome.storage.local`.
 - `src/app/extension-storage.service.ts`: Typed app storage facade for project-specific keys.
+- `src/app/familysearch-person.service.ts`: Typed app facade for retrieving one FamilySearch person by explicit ID.
+- `src/familysearch-person-url.ts`: Shared helper for FamilySearch person ID extraction and details URL construction.
 - `src/Interfaces`: Shared TypeScript interfaces used across routes, components, and services.
 - `src/extension`: Authored TypeScript source for the Chrome background worker and content script.
 - `public/manifest.json`: Chrome MV3 manifest.
@@ -71,7 +75,8 @@ index.html#/gedcom
 Current routes:
 
 - `#/gedcom`: Upload a GEDCOM file, parse it, store normalized JSON locally, and show import summary.
-- `#/results`: Show normalized GEDCOM review cards, card settings, storage debug panel, and start-person mapping.
+- `#/results`: Show normalized GEDCOM review cards, card settings, storage debug panel, and GEDCOM starting-person selection.
+- `#/mapping`: Type or paste a FamilySearch ID, retrieve that exact FamilySearch person, show the retrieved card, and save the ID against the selected GEDCOM starting person.
 
 The app uses Angular's modern template control flow (`@if`, `@for`) and signal-driven state where practical. Prefer signals/computed state over manual UI synchronization when adding new features.
 
@@ -108,14 +113,20 @@ Important keys:
 
 The results route includes a collapsible storage debug panel to inspect both typed import loading and raw extension storage.
 
-## Start-Person Mapping
+## Start-Person Selection And Mapping
 
 The results page currently lets the user:
 
 - Pick a GEDCOM person card as the starting person.
+- Persist that GEDCOM starting person to extension storage.
+
+The mapping route currently lets the user:
+
 - Paste or type a FamilySearch ID.
 - Enter the ID without the dash; the UI formats it as `XXXX-XXX`.
-- Persist the mapping to extension storage.
+- Retrieve the exact FamilySearch person details URL for that ID through the extension background worker.
+- Display the retrieved FamilySearch person as a reusable person card.
+- Persist the mapping to extension storage after retrieval succeeds.
 
 FamilySearch IDs are treated as seven alphanumeric characters displayed as four characters, a dash, then three characters.
 
@@ -151,7 +162,7 @@ The background worker is responsible for:
 The content script is responsible for:
 
 - Reading visible FamilySearch person page content.
-- Extracting the current FamilySearch person ID.
+- Extracting the visible page's FamilySearch person ID during capture/traversal.
 - Extracting visible facts.
 - Extracting related FamilySearch person IDs from links/text.
 - Returning a raw page snapshot to the background worker.
@@ -199,7 +210,8 @@ Working:
 - GEDCOM upload and normalized local storage.
 - GEDCOM results cards.
 - Card settings for relationship/residence/other sections.
-- Start-person mapping from a GEDCOM card to a FamilySearch ID.
+- GEDCOM starting-person selection from the results cards.
+- Mapping route from the selected GEDCOM card to a retrieved FamilySearch person card by manually entered ID.
 - Extension runtime proof-of-concept for visible FamilySearch capture.
 - Queue-based traversal scaffolding in the background worker.
 - TypeScript source for extension runtime, bundled to manifest JavaScript.

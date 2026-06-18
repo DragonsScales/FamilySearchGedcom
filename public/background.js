@@ -8,14 +8,30 @@
     return Boolean(value) && typeof value === "object";
   }
 
+  // src/familysearch-person-url.ts
+  var FAMILYSEARCH_PERSON_DETAILS_BASE_URL = "https://www.familysearch.org/en/tree/person/details/";
+  var FAMILYSEARCH_PERSON_ROUTE_PATTERN = /\/tree\/person\/(?:(?:details|about|timeline|sources|memories|ordinances|collaborate|vitals|non-vitals|family)\/)?([A-Z0-9]{4}-[A-Z0-9]{3})(?:[/?#]|$)/i;
+  function buildFamilySearchPersonDetailsUrl(personId) {
+    return `${FAMILYSEARCH_PERSON_DETAILS_BASE_URL}${normalizeFamilySearchPersonId(personId)}`;
+  }
+  function extractFamilySearchPersonIdFromUrl(url) {
+    const match = String(url).match(FAMILYSEARCH_PERSON_ROUTE_PATTERN);
+    return match?.[1] ? normalizeFamilySearchPersonId(match[1]) : null;
+  }
+  function normalizeFamilySearchPersonId(value) {
+    const normalized = String(value ?? "").trim().toUpperCase();
+    return /^[A-Z0-9-]+$/.test(normalized) ? normalized : "";
+  }
+
   // src/extension/background.ts
   var STORAGE_KEY = "familySearchGedcomCollectorState";
-  var FAMILYSEARCH_PERSON_URL = "https://www.familysearch.org/en/tree/person/details/";
   var EXTENSION_APP_URL = "index.html#/gedcom";
   var ALARM_CAPTURE_PAGE = "familysearchCollector.capturePage";
   var ALARM_NEXT_NAVIGATION = "familysearchCollector.nextNavigation";
-  var MIN_DELAY_MS = 3e3;
+  var MIN_DELAY_MS = 1e3;
   var MAX_DELAY_MS = 6e4;
+  var PERSON_RETRIEVAL_TIMEOUT_MS = 3e4;
+  var PERSON_RETRIEVAL_SETTLE_MS = 2e4;
   function defaultState() {
     return {
       running: false,
@@ -26,7 +42,7 @@
       records: [],
       options: {
         maxPages: 25,
-        maxDepth: 2,
+        maxDepth: 3,
         delayMs: 6e3,
         allowedIds: []
       },
@@ -47,8 +63,7 @@
     return Math.min(max, Math.max(min, parsed));
   }
   function normalizePersonId(value) {
-    const normalized = String(value ?? "").trim().toUpperCase();
-    return /^[A-Z0-9-]+$/.test(normalized) ? normalized : "";
+    return normalizeFamilySearchPersonId(value);
   }
   async function loadState() {
     const stored = await storageGet(STORAGE_KEY);
@@ -104,6 +119,54 @@
     const tab = await getActiveTab();
     const state = await captureAndStore(tab.id, { source: "manual" });
     return summarizeState(state);
+  }
+  async function retrieveFamilySearchPerson(payload = {}) {
+    const familySearchId = normalizePersonId(payload.familySearchId ?? payload.personId);
+    if (!familySearchId) {
+      throw new Error("Enter a valid FamilySearch ID before retrieving a person.");
+    }
+    const url = buildFamilySearchPersonDetailsUrl(familySearchId);
+    const tab = await tabsCreate({ url, active: false });
+    if (!tab.id) throw new Error("Could not open the FamilySearch person page.");
+    try {
+      if (tab.status !== "complete") {
+        await waitForTabComplete(tab.id);
+      }
+      console.info("[FSG retrieval] waiting before capturing newly opened FamilySearch tab", {
+        familySearchId,
+        delayMs: PERSON_RETRIEVAL_SETTLE_MS
+      });
+      await delay(PERSON_RETRIEVAL_SETTLE_MS);
+      const response = await sendCaptureMessage(tab.id, familySearchId);
+      if (!response.ok || !response.capture) {
+        throw new Error(response.error ?? "The FamilySearch person page could not be captured.");
+      }
+      console.info("[FSG retrieval] raw capture from newly opened FamilySearch tab", response.capture);
+      return toRetrievedPerson(response.capture, familySearchId, url);
+    } finally {
+      await tabsRemove(tab.id).catch(() => void 0);
+    }
+  }
+  function toRetrievedPerson(capture, requestedFamilySearchId, fallbackUrl) {
+    const capturedUrlFamilySearchId = normalizePersonId(extractFamilySearchPersonIdFromUrl(capture.url ?? ""));
+    const capturedFamilySearchId = normalizePersonId(capture.person?.familySearchId) || capturedUrlFamilySearchId;
+    if (!capturedFamilySearchId) {
+      throw new Error("The retrieved page did not contain a FamilySearch person ID.");
+    }
+    if (capturedFamilySearchId && capturedFamilySearchId !== requestedFamilySearchId) {
+      throw new Error(`Retrieved ${capturedFamilySearchId}, but ${requestedFamilySearchId} was requested.`);
+    }
+    const familySearchId = capturedFamilySearchId || requestedFamilySearchId;
+    return {
+      familySearchId,
+      displayName: capture.person?.displayName || capture.title || familySearchId,
+      url: capture.url ?? fallbackUrl,
+      title: capture.title ?? "",
+      capturedAt: capture.capturedAt ?? (/* @__PURE__ */ new Date()).toISOString(),
+      facts: capture.facts ?? [],
+      relationships: normalizeCapturedRelationships(capture.relationships ?? []),
+      debugSnapshot: normalizeDebugSnapshot(capture.raw)
+    };
   }
   async function startTraversal(payload = {}) {
     const tab = await getActiveTab();
@@ -216,7 +279,7 @@
         relationshipHint: relationship.relationshipHint ?? "",
         fromPersonId: currentPersonId ?? null,
         depth: nextDepth,
-        url: `${FAMILYSEARCH_PERSON_URL}${personId}`
+        url: buildFamilySearchPersonDetailsUrl(personId)
       });
       seen.add(personId);
     }
@@ -279,9 +342,9 @@
     return captured;
   }
   function scheduleTraversalAlarm(name, delayMs) {
-    const delay = Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delayMs));
+    const delay2 = Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delayMs));
     chrome.alarms.clear(name, () => {
-      chrome.alarms.create(name, { when: Date.now() + delay });
+      chrome.alarms.create(name, { when: Date.now() + delay2 });
     });
   }
   function clearTraversalAlarms() {
@@ -325,13 +388,17 @@
       lastEvent: `Traversal stopped after error: ${getErrorMessage(error)}`
     });
   }
-  async function sendCaptureMessage(tabId) {
+  async function sendCaptureMessage(tabId, expectedFamilySearchId = "") {
+    const message = {
+      type: "FS_CAPTURE_PAGE",
+      expectedFamilySearchId
+    };
     try {
-      return await tabsSendMessage(tabId, { type: "FS_CAPTURE_PAGE" });
+      return await tabsSendMessage(tabId, message);
     } catch (error) {
       if (!getErrorMessage(error).includes("Receiving end does not exist")) throw error;
       await injectContentScript(tabId);
-      return tabsSendMessage(tabId, { type: "FS_CAPTURE_PAGE" });
+      return tabsSendMessage(tabId, message);
     }
   }
   function injectContentScript(tabId) {
@@ -366,6 +433,8 @@
       }
       case "CAPTURE_CURRENT":
         return captureActiveTab();
+      case "RETRIEVE_FAMILYSEARCH_PERSON":
+        return retrieveFamilySearchPerson(envelope.payload);
       case "START_TRAVERSAL":
         return startTraversal(envelope.payload);
       case "STOP_TRAVERSAL":
@@ -403,6 +472,35 @@
       });
     });
   }
+  function tabsRemove(tabId) {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.remove(tabId, () => {
+        const error = chrome.runtime.lastError;
+        if (error) reject(new Error(error.message ?? "Could not close the FamilySearch tab."));
+        else resolve();
+      });
+    });
+  }
+  function waitForTabComplete(tabId) {
+    return new Promise((resolve, reject) => {
+      let listener = () => {
+      };
+      const timeoutId = setTimeout(() => {
+        chrome.tabs.onUpdated.removeListener(listener);
+        reject(new Error("Timed out waiting for the FamilySearch person page to load."));
+      }, PERSON_RETRIEVAL_TIMEOUT_MS);
+      listener = (updatedTabId, changeInfo, tab) => {
+        if (updatedTabId !== tabId || changeInfo.status !== "complete") return;
+        clearTimeout(timeoutId);
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve(tab);
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+    });
+  }
+  function delay(milliseconds) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
+  }
   function tabsSendMessage(tabId, message) {
     return new Promise((resolve, reject) => {
       chrome.tabs.sendMessage(tabId, message, (response) => {
@@ -424,6 +522,55 @@
   }
   function isCaptureResponse(value) {
     return isRecord(value) && typeof value["ok"] === "boolean";
+  }
+  function normalizeCapturedRelationships(relationships) {
+    return relationships.map((relationship) => {
+      const personId = normalizePersonId(relationship.personId);
+      if (!personId) return null;
+      return {
+        personId,
+        name: relationship.name ?? "",
+        relationshipHint: relationship.relationshipHint ?? "",
+        url: buildFamilySearchPersonDetailsUrl(personId),
+        context: isRecord(relationship) && typeof relationship["context"] === "string" ? relationship["context"] : ""
+      };
+    }).filter((relationship) => relationship !== null);
+  }
+  function normalizeDebugSnapshot(value) {
+    if (!isRecord(value)) return void 0;
+    const links = Array.isArray(value["familySearchPersonLinks"]) ? value["familySearchPersonLinks"].filter(isFamilySearchPageDebugLink) : [];
+    return {
+      url: getString(value["url"]),
+      title: getString(value["title"]),
+      expectedFamilySearchId: getString(value["expectedFamilySearchId"]),
+      documentReadyState: getString(value["documentReadyState"]),
+      readinessReason: getString(value["readinessReason"]),
+      loadingSkeletonCount: getNumber(value["loadingSkeletonCount"]),
+      hasExpectedFamilySearchId: getBoolean(value["hasExpectedFamilySearchId"]),
+      bodyTextLength: getNumber(value["bodyTextLength"]),
+      mainTextLength: getNumber(value["mainTextLength"]),
+      headings: getStringArray(value["headings"]),
+      visibleTextSample: getStringArray(value["visibleTextSample"]),
+      mainTextSample: getString(value["mainTextSample"]),
+      bodyTextSample: getString(value["bodyTextSample"]),
+      mainHtmlSample: getString(value["mainHtmlSample"]),
+      familySearchPersonLinks: links
+    };
+  }
+  function isFamilySearchPageDebugLink(value) {
+    return isRecord(value) && typeof value["text"] === "string" && typeof value["href"] === "string" && (typeof value["personId"] === "string" || value["personId"] === null) && typeof value["ariaLabel"] === "string" && typeof value["role"] === "string" && typeof value["context"] === "string";
+  }
+  function getString(value) {
+    return typeof value === "string" ? value : "";
+  }
+  function getNumber(value) {
+    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  }
+  function getBoolean(value) {
+    return typeof value === "boolean" ? value : false;
+  }
+  function getStringArray(value) {
+    return Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
   }
   function toMessageEnvelope(message) {
     return isRecord(message) ? {

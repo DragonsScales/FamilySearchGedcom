@@ -1,6 +1,8 @@
 import { Routes } from '@angular/router';
 import { GedcomUploadComponent } from './gedcom-upload/gedcom-upload.component';
 import { GedcomResultsComponent } from './gedcom-results/gedcom-results.component';
+import { MappingComponent } from './mapping/mapping.component';
+import { TraversalComponent } from './traversal/traversal.component';
 
 export const routes: Routes = [
   {
@@ -15,6 +17,14 @@ export const routes: Routes = [
   {
     path: 'results',
     component: GedcomResultsComponent
+  },
+  {
+    path: 'mapping',
+    component: MappingComponent
+  },
+  {
+    path: 'traversal',
+    component: TraversalComponent
   },
   {
     path: '**',

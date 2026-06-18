@@ -28,6 +28,8 @@ export interface CardSectionOverrides {
 
 export interface PersonCard {
   id: string;
+  referenceLabel?: string;
+  referenceId?: string;
   name: string;
   gender: string;
   alternateNames: string[];

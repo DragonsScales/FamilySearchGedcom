@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { normalizeFamilySearchIdInput } from '../familysearch-id';
-import { PersonCard } from '../../Interfaces/person-card.interface';
+import type { PersonCard } from '../../Interfaces/person-card.interface';
 
 @Component({
   selector: 'fsg-start-person-mapping',
@@ -12,11 +12,12 @@ export class StartPersonMappingComponent {
   @Input() startPerson: PersonCard | null = null;
   @Input() familySearchId = '';
   @Input() isFamilySearchIdComplete = false;
+  @Input() isRetrievingPerson = false;
   @Input() errorMessage = '';
   @Input() statusMessage = '';
 
   @Output() readonly familySearchIdChange = new EventEmitter<string>();
-  @Output() readonly saveMapping = new EventEmitter<void>();
+  @Output() readonly retrievePerson = new EventEmitter<void>();
   @Output() readonly clearMapping = new EventEmitter<void>();
 
   onFamilySearchIdInput(event: Event): void {

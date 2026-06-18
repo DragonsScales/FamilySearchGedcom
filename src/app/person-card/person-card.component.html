@@ -2,7 +2,11 @@
   <header class="card-header">
     <div>
       <h3>{{ person.name }}</h3>
+      @if (person.referenceId) {
+      <p class="id-pill">{{ person.referenceLabel || 'ID' }} {{ person.referenceId }}</p>
+      }
     </div>
+    @if (showStartAction) {
     <div class="card-actions">
       <button
         type="button"
@@ -13,6 +17,7 @@
         {{ isSelected ? 'Starting Person' : 'Select Start' }}
       </button>
     </div>
+    }
   </header>
 
   <dl class="fact-lines">

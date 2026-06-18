@@ -14,6 +14,7 @@ import {
 export class PersonCardComponent {
   @Input({ required: true }) person!: PersonCard;
   @Input() isSelected = false;
+  @Input() showStartAction = true;
 
   @Output() readonly selectStart = new EventEmitter<void>();
   @Output() readonly sectionOpenChange = new EventEmitter<PersonCardSectionOpenChange>();

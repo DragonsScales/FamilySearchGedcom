@@ -40,16 +40,22 @@
     ></fsg-card-settings>
   </section>
 
-  <fsg-start-person-mapping
-    [startPerson]="selectedStartPerson()"
-    [familySearchId]="familySearchIdInput()"
-    [isFamilySearchIdComplete]="isFamilySearchIdComplete()"
-    [errorMessage]="mappingErrorMessage()"
-    [statusMessage]="mappingStatusMessage()"
-    (familySearchIdChange)="onFamilySearchIdInput($event)"
-    (saveMapping)="saveStartPersonMapping()"
-    (clearMapping)="clearStartPersonMapping()"
-  ></fsg-start-person-mapping>
+  <section class="start-selection">
+    <div>
+      <p class="kicker">Starting Person</p>
+      @if (selectedStartPerson(); as startPerson) {
+      <h3>{{ startPerson.name }}</h3>
+      <p>{{ mappingStatusMessage() || 'This GEDCOM person is selected as the traversal root.' }}</p>
+      } @else {
+      <h3>Select a starting person.</h3>
+      <p>Use the Select Start button on a GEDCOM card before opening mapping.</p>
+      }
+      @if (mappingErrorMessage()) {
+      <p class="error">{{ mappingErrorMessage() }}</p>
+      }
+    </div>
+    <a routerLink="/mapping">Open Mapping</a>
+  </section>
 
   <section class="cards" aria-label="GEDCOM people">
     @for (person of personCards(); track person.id) {

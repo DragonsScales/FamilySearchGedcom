@@ -1,0 +1,51 @@
+<article class="page">
+  <section class="hero">
+    <p class="eyebrow">Step 3</p>
+    <h2>Person mapping</h2>
+    <p>
+      Connect the GEDCOM starting person to the matching FamilySearch person ID.
+    </p>
+  </section>
+
+  @if (loadErrorMessage()) {
+  <section class="empty-state">
+    <p class="kicker">Mapping Error</p>
+    <h3>Mapping context could not be loaded.</h3>
+    <p class="error">{{ loadErrorMessage() }}</p>
+  </section>
+  }
+
+  @if (!importedGedcom()) {
+  <section class="empty-state">
+    <p class="kicker">No GEDCOM Loaded</p>
+    <h3>Upload a GEDCOM before mapping.</h3>
+    <p>The mapping route needs a locally stored GEDCOM import before it can save a starting person match.</p>
+    <a routerLink="/gedcom">Go to upload</a>
+  </section>
+  } @else {
+  <fsg-start-person-mapping
+    [startPerson]="startPerson()"
+    [familySearchId]="familySearchIdInput()"
+    [isFamilySearchIdComplete]="isFamilySearchIdComplete()"
+    [isRetrievingPerson]="isRetrievingFamilySearchPerson()"
+    [errorMessage]="mappingErrorMessage()"
+    [statusMessage]="mappingStatusMessage()"
+    (familySearchIdChange)="onFamilySearchIdInput($event)"
+    (retrievePerson)="retrieveFamilySearchPerson()"
+    (clearMapping)="clearStartPersonMapping()"
+  ></fsg-start-person-mapping>
+
+  @if (retrievedFamilySearchPersonCard(); as familySearchPersonCard) {
+  <section class="retrieved-person">
+    @if (startPerson(); as person) {
+    <p class="kicker">FamilySearch Match</p>
+    <h3>Saved {{ person.name }} as {{ familySearchIdInput() }}</h3>
+    }
+    <fsg-person-card
+      [person]="familySearchPersonCard"
+      [showStartAction]="false"
+    ></fsg-person-card>
+  </section>
+  }
+  }
+</article>

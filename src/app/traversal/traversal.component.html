@@ -1,0 +1,165 @@
+<article class="page">
+  <section class="hero">
+    <p class="eyebrow">Step 4</p>
+    <h2>FamilySearch traversal</h2>
+    <p>Collect FamilySearch person snapshots and review them as cards.</p>
+  </section>
+
+  @if (loadErrorMessage()) {
+  <section class="empty-state">
+    <p class="kicker">Traversal Error</p>
+    <h3>Traversal state could not be loaded.</h3>
+    <p class="error">{{ loadErrorMessage() }}</p>
+  </section>
+  }
+
+  <section class="traversal-toolbar">
+    <div>
+      <p class="kicker">FamilySearch Root</p>
+      @if (mappedFamilySearchId()) {
+      <h3>{{ mappedFamilySearchId() }}</h3>
+      } @else {
+      <h3>No FamilySearch ID mapped.</h3>
+      }
+      <p>{{ lastEvent() }}</p>
+    </div>
+
+    <div class="status-grid" aria-label="Traversal status">
+      <div>
+        <span>{{ isRunning() ? 'Running' : 'Idle' }}</span>
+        <strong>Status</strong>
+      </div>
+      <div>
+        <span>{{ personCards().length }}</span>
+        <strong>Cards</strong>
+      </div>
+      <div>
+        <span>{{ queuedCount() }}</span>
+        <strong>Queued</strong>
+      </div>
+      <div>
+        <span>{{ visitedCount() }}</span>
+        <strong>Visited</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="control-panel">
+    <div class="field-grid">
+      <label>
+        <span>Max Pages</span>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          [value]="maxPagesInput()"
+          (input)="setMaxPages($event)"
+        >
+      </label>
+      <label>
+        <span>Max Depth</span>
+        <input
+          type="number"
+          min="0"
+          step="1"
+          [value]="maxDepthInput()"
+          (input)="setMaxDepth($event)"
+        >
+      </label>
+      <label>
+        <span>Delay Seconds</span>
+        <input
+          type="number"
+          min="1"
+          step="0.5"
+          [value]="delaySecondsInput()"
+          (input)="setDelaySeconds($event)"
+        >
+      </label>
+    </div>
+
+    <label class="consent-row">
+      <input
+        type="checkbox"
+        [checked]="accountAccessConsent()"
+        (change)="setAccountAccessConsent($event)"
+      >
+      <span>Use my logged-in FamilySearch account to open and read person pages for this traversal.</span>
+    </label>
+
+    <div class="actions">
+      <button
+        type="button"
+        (click)="startTraversal()"
+        [disabled]="isBusy() || isRunning() || !mappedFamilySearchId() || !accountAccessConsent()"
+      >
+        Start
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        (click)="stopTraversal()"
+        [disabled]="isBusy() || !isRunning()"
+      >
+        Stop
+      </button>
+      <button
+        type="button"
+        class="secondary"
+        (click)="refreshTraversalState()"
+        [disabled]="isBusy()"
+      >
+        Refresh
+      </button>
+      <button
+        type="button"
+        class="secondary danger"
+        (click)="resetTraversal()"
+        [disabled]="isBusy() || isRunning()"
+      >
+        Reset
+      </button>
+    </div>
+
+    @if (!mappedFamilySearchId()) {
+    <p class="notice">Map a starting FamilySearch person before traversal.</p>
+    <a routerLink="/mapping">Open Mapping</a>
+    }
+    @if (actionStatusMessage()) {
+    <p class="status">{{ actionStatusMessage() }}</p>
+    }
+    @if (actionErrorMessage()) {
+    <p class="error">{{ actionErrorMessage() }}</p>
+    }
+  </section>
+
+  <section class="review-toolbar">
+    <div>
+      <p class="kicker">FamilySearch Cards</p>
+      <h3>{{ personCards().length }} captured people</h3>
+      <p>Cards are shown in captured traversal order.</p>
+    </div>
+
+    <fsg-card-settings
+      [settings]="settings()"
+      (settingChange)="setDefaultOpen($event.setting, $event.open)"
+    ></fsg-card-settings>
+  </section>
+
+  @if (personCards().length) {
+  <section class="cards" aria-label="FamilySearch people">
+    @for (person of personCards(); track person.id) {
+    <fsg-person-card
+      [person]="person"
+      [showStartAction]="false"
+      (sectionOpenChange)="setSectionOpen(person, $event.section, $event.open)"
+    ></fsg-person-card>
+    }
+  </section>
+  } @else {
+  <section class="empty-state">
+    <p class="kicker">No FamilySearch Cards</p>
+    <h3>No captured FamilySearch people yet.</h3>
+  </section>
+  }
+</article>
