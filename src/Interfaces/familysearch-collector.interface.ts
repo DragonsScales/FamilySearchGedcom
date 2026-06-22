@@ -5,8 +5,6 @@ import type {
 } from './familysearch-person.interface';
 
 export interface FamilySearchCollectorOptions {
-  maxPages: number;
-  maxPagesEnabled: boolean;
   allowedIds: string[];
 }
 
@@ -67,7 +65,5 @@ export interface FamilySearchCollectorState {
 export interface FamilySearchTraversalStartOptions {
   familySearchId?: string;
   accountAccessConsent: boolean;
-  maxPages: number;
-  maxPagesEnabled: boolean;
   resume?: boolean;
 }

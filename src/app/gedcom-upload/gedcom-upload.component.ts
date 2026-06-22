@@ -46,7 +46,7 @@ export class GedcomUploadComponent implements OnInit {
         document
       };
 
-      await this.storage.saveGedcomImport(importedGedcom);
+      await this.storage.replaceGedcomImport(importedGedcom);
       this.importedGedcom.set(importedGedcom);
     } catch (error) {
       this.errorMessage.set(error instanceof Error ? error.message : 'Could not parse this GEDCOM file.');

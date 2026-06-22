@@ -486,8 +486,6 @@
       visitedPersonIds: [],
       records: [],
       options: {
-        maxPages: 25,
-        maxPagesEnabled: false,
         allowedIds: []
       },
       lastEvent: "Idle",
@@ -495,15 +493,8 @@
     };
   }
   function normalizeOptions(options = {}) {
-    const maxPages = clampInteger(options.maxPages, 1, 500, 25);
-    const maxPagesEnabled = options.maxPagesEnabled === true;
     const allowedIds = Array.isArray(options.allowedIds) ? [...new Set(options.allowedIds.map(normalizePersonId).filter(Boolean))] : [];
-    return { maxPages, maxPagesEnabled, allowedIds };
-  }
-  function clampInteger(value, min, max, fallback) {
-    const parsed = Number.parseInt(String(value), 10);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.min(max, Math.max(min, parsed));
+    return { allowedIds };
   }
   function normalizePersonId(value) {
     return normalizeFamilySearchPersonId(value);
@@ -766,14 +757,6 @@
     if (nextState.running) {
       const gedcomImport = await loadGedcomImport();
       nextState = enqueueGedcomExpectedRelatives(nextState, record, activeDepth, gedcomImport.document);
-      if (hasReachedMaxPages(nextState)) {
-        nextState = {
-          ...nextState,
-          running: false,
-          activeItem: null,
-          lastEvent: `Reached the max page limit (${nextState.options.maxPages}).`
-        };
-      }
     }
     return saveState(nextState);
   }
@@ -890,14 +873,6 @@
   async function navigateNextQueued() {
     const state = await loadState();
     if (!state.running) return state;
-    if (hasReachedMaxPages(state)) {
-      return saveState({
-        ...state,
-        running: false,
-        activeItem: null,
-        lastEvent: `Reached the max page limit (${state.options.maxPages}).`
-      });
-    }
     const [nextItem, ...remainingQueue] = state.queue;
     if (!nextItem) {
       return saveState({
@@ -916,12 +891,6 @@
     if (!nextState.activeTabId) throw new Error("Traversal has no active tab to navigate.");
     await tabsUpdate(nextState.activeTabId, { url: nextItem.url });
     return nextState;
-  }
-  function countCapturedFamilySearchRecords(records) {
-    return records.filter((record) => Boolean(record.person?.familySearchId)).length;
-  }
-  function hasReachedMaxPages(state) {
-    return state.options.maxPagesEnabled && countCapturedFamilySearchRecords(state.records) >= state.options.maxPages;
   }
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status !== "complete") return;

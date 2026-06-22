@@ -35,7 +35,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
   private readonly traversal = inject(FamilySearchTraversalService);
   private readonly storage = inject(ExtensionStorageService);
   private unsubscribeTraversalState: (() => void) | null = null;
-  private optionsLoaded = false;
 
   readonly collectorState = signal<FamilySearchCollectorState | null>(null);
   readonly mappedFamilySearchId = signal('');
@@ -44,8 +43,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
   readonly actionStatusMessage = signal('');
   readonly isBusy = signal(false);
   readonly accountAccessConsent = signal(false);
-  readonly maxPagesEnabled = signal(false);
-  readonly maxPagesInput = signal('25');
   readonly settings = signal<CardSettings>({
     relationshipsOpen: false,
     residencesOpen: false,
@@ -98,7 +95,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
     try {
       const state = await this.traversal.getState();
       this.collectorState.set(state);
-      this.loadOptionsFromState(state);
       this.loadErrorMessage.set('');
       if (!options.silent) this.actionStatusMessage.set('FamilySearch traversal state refreshed.');
     } catch (error) {
@@ -137,9 +133,7 @@ export class TraversalComponent implements OnInit, OnDestroy {
     try {
       const options = {
         familySearchId,
-        accountAccessConsent: this.accountAccessConsent(),
-        maxPagesEnabled: this.maxPagesEnabled(),
-        maxPages: parsePositiveInteger(this.maxPagesInput(), 25)
+        accountAccessConsent: this.accountAccessConsent()
       };
       const state = mode === 'resume'
         ? await this.traversal.resumeTraversal(options)
@@ -181,8 +175,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
     try {
       const state = await this.traversal.resetTraversal();
       this.collectorState.set(state);
-      this.optionsLoaded = false;
-      this.loadOptionsFromState(state);
       this.sectionOverrides.set({});
       this.actionStatusMessage.set(state.lastEvent);
     } catch (error) {
@@ -191,14 +183,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
     } finally {
       this.isBusy.set(false);
     }
-  }
-
-  setMaxPages(event: Event): void {
-    this.maxPagesInput.set((event.target as HTMLInputElement).value);
-  }
-
-  setMaxPagesEnabled(event: Event): void {
-    this.maxPagesEnabled.set((event.target as HTMLInputElement).checked);
   }
 
   setAccountAccessConsent(event: Event): void {
@@ -234,24 +218,10 @@ export class TraversalComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadOptionsFromState(state: FamilySearchCollectorState): void {
-    if (this.optionsLoaded) return;
-
-    this.maxPagesInput.set(String(state.options.maxPages));
-    this.maxPagesEnabled.set(state.options.maxPagesEnabled);
-    this.optionsLoaded = true;
-  }
-
   private watchTraversalState(): void {
     this.unsubscribeTraversalState = this.traversal.watchState((state) => {
       this.collectorState.set(state);
-      this.loadOptionsFromState(state);
       this.loadErrorMessage.set('');
     });
   }
-}
-
-function parsePositiveInteger(value: string, fallback: number): number {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }

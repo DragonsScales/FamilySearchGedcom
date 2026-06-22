@@ -109,40 +109,9 @@ h3 {
   text-transform: uppercase;
 }
 
-.field-grid {
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 10px;
-}
-
 label {
   display: grid;
   gap: 8px;
-}
-
-.field-grid label span,
-.limit-toggle span {
-  color: var(--muted);
-  font: 900 0.68rem/1.2 ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.limit-toggle {
-  grid-template-columns: 20px minmax(0, 1fr);
-  align-items: center;
-}
-
-.max-pages-field {
-  width: min(100%, 180px);
-}
-
-.limit-toggle input {
-  width: 18px;
-  min-height: 18px;
-  padding: 0;
-  accent-color: #173027;
 }
 
 input {
@@ -231,8 +200,7 @@ button:disabled {
     flex-direction: column;
   }
 
-  .status-grid,
-  .field-grid {
+  .status-grid {
     grid-template-columns: 1fr;
   }
 }

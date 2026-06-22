@@ -24,16 +24,6 @@
       <p>{{ comparisonRows().length }} people ready for comparison from {{ capturedCount() }} traversal record(s).</p>
     </div>
 
-    <div class="actions">
-      <button
-        type="button"
-        class="secondary"
-        (click)="loadComparisonContext()"
-        [disabled]="isLoading()"
-      >
-        Refresh
-      </button>
-    </div>
   </section>
 
   @if (!importedGedcom()) {

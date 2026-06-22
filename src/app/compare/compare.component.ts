@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type {
   FamilySearchCollectorState,
@@ -67,9 +67,11 @@ const EMPTY_VALUE = 'Not listed';
   templateUrl: './compare.component.html',
   styleUrl: './compare.component.css'
 })
-export class CompareComponent implements OnInit {
+export class CompareComponent implements OnInit, OnDestroy {
   private readonly storage = inject(ExtensionStorageService);
   private readonly traversal = inject(FamilySearchTraversalService);
+  private unsubscribeGedcomImport: (() => void) | null = null;
+  private unsubscribeCollectorState: (() => void) | null = null;
 
   readonly importedGedcom = signal<StoredGedcomImport | null>(null);
   readonly collectorState = signal<FamilySearchCollectorState | null>(null);
@@ -83,7 +85,13 @@ export class CompareComponent implements OnInit {
   readonly capturedCount = computed(() => this.collectorState()?.records.length ?? 0);
 
   async ngOnInit(): Promise<void> {
+    this.watchComparisonContext();
     await this.loadComparisonContext();
+  }
+
+  ngOnDestroy(): void {
+    this.unsubscribeGedcomImport?.();
+    this.unsubscribeCollectorState?.();
   }
 
   async loadComparisonContext(): Promise<void> {
@@ -104,6 +112,18 @@ export class CompareComponent implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private watchComparisonContext(): void {
+    this.unsubscribeGedcomImport = this.storage.watchGedcomImport((importedGedcom) => {
+      this.importedGedcom.set(importedGedcom);
+      this.loadErrorMessage.set('');
+    });
+
+    this.unsubscribeCollectorState = this.traversal.watchState((collectorState) => {
+      this.collectorState.set(collectorState);
+      this.loadErrorMessage.set('');
+    });
   }
 }
 

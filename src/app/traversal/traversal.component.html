@@ -45,27 +45,6 @@
   </section>
 
   <section class="control-panel">
-    <div class="field-grid">
-      <label class="max-pages-field">
-        <span>Max Pages</span>
-        <input
-          type="number"
-          min="1"
-          step="1"
-          [value]="maxPagesInput()"
-          (input)="setMaxPages($event)"
-        >
-      </label>
-      <label class="limit-toggle">
-        <input
-          type="checkbox"
-          [checked]="maxPagesEnabled()"
-          (change)="setMaxPagesEnabled($event)"
-        >
-        <span>Limit Pages</span>
-      </label>
-    </div>
-
     <label class="consent-row">
       <input
         type="checkbox"

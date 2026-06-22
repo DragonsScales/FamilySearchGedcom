@@ -119,8 +119,6 @@ function normalizeCollectorState(value: unknown): FamilySearchCollectorState {
 function normalizeCollectorOptions(value: unknown): FamilySearchCollectorOptions {
   const options = isRecord(value) ? value : {};
   return {
-    maxPages: getNumber(options['maxPages'], 25),
-    maxPagesEnabled: getBoolean(options['maxPagesEnabled']),
     allowedIds: getArray(options['allowedIds']).filter((item): item is string => typeof item === 'string')
   };
 }

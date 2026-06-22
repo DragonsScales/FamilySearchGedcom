@@ -49,6 +49,18 @@ export class ChromeStorageService {
     await this.logSnapshot(`after removing ${key}`);
   }
 
+  async removeValues(keys: string[]): Promise<void> {
+    this.assertAvailable();
+    console.info('[Chrome storage] removing values from chrome.storage.local', keys);
+
+    await withTimeout(
+      this.remove(keys),
+      STORAGE_TIMEOUT_MS,
+      `Timed out removing ${keys.join(', ')} from chrome.storage.local.`
+    );
+    await this.logSnapshot(`after removing ${keys.join(', ')}`);
+  }
+
   watchValue(key: string, onChange: (value: unknown) => void): () => void {
     this.assertAvailable();
     const onChanged = chrome.storage?.onChanged;
