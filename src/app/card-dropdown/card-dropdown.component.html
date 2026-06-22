@@ -1,0 +1,28 @@
+<details [open]="open" (toggle)="onToggle($event)">
+  <summary>{{ title }} <span>{{ items.length }}</span></summary>
+
+  @if (items.length) {
+    @if (hasDetailedItems) {
+    <div class="fact-list">
+      @for (item of items; track trackItem($index, item)) {
+      <article class="mini-fact">
+        <p class="mini-title">{{ item.title }}</p>
+        @for (line of item.lines; track trackLine($index, line)) {
+        <p><strong>{{ line.label }}:</strong> {{ line.value }}</p>
+        }
+      </article>
+      }
+    </div>
+    } @else {
+    <ul>
+      @for (item of items; track trackItem($index, item)) {
+      <li>
+        <strong>{{ item.title }}</strong>
+      </li>
+      }
+    </ul>
+    }
+  } @else {
+  <p class="empty-line">{{ emptyText }}</p>
+  }
+</details>

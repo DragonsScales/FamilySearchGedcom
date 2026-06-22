@@ -20,7 +20,7 @@
 h2,
 h3 {
   margin: 0;
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
 }
 
 h2 {
@@ -107,9 +107,7 @@ h3 {
 }
 
 .comparison-head,
-.standard-field-row,
-.comparison-summary-row,
-.comparison-expanded-row {
+.standard-field-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -121,8 +119,12 @@ h3 {
 .comparison-head div,
 .comparison-cell {
   min-width: 0;
-  padding: 12px 16px;
+  padding: 10px;
   border-left: 1px solid rgba(222, 210, 189, 0.82);
+}
+
+.comparison-head div {
+  padding: 12px 16px;
 }
 
 .comparison-head div:first-child,
@@ -147,45 +149,19 @@ h3 {
 
 .comparison-cell {
   display: grid;
+  align-content: stretch;
+}
+
+.cell-card {
+  display: grid;
   align-content: start;
   gap: 7px;
-}
-
-.comparison-summary-row {
-  cursor: pointer;
-  list-style: none;
-}
-
-.comparison-summary-row::-webkit-details-marker {
-  display: none;
-}
-
-.comparison-summary-row::marker {
-  content: "";
-}
-
-.collapsible-field-row[open] .comparison-summary-row {
-  border-bottom: 1px solid rgba(222, 210, 189, 0.72);
-}
-
-.collapsible-field-row[open] .field-preview {
-  display: none;
-}
-
-.collapsible-field-row .comparison-summary-row .comparison-cell:first-child .field-label::before {
-  content: ">";
-  display: inline-grid;
-  place-items: center;
-  width: 14px;
-  height: 14px;
-  color: var(--cedar);
-  font: 900 0.72rem/1 ui-sans-serif, system-ui, sans-serif;
-  transform-origin: center;
-  transition: transform 140ms ease;
-}
-
-.collapsible-field-row[open] .comparison-summary-row .comparison-cell:first-child .field-label::before {
-  transform: rotate(90deg);
+  min-width: 0;
+  min-height: 100%;
+  padding: 14px;
+  border: 1px solid rgba(222, 210, 189, 0.82);
+  border-radius: 18px;
+  background: rgba(255, 253, 247, 0.78);
 }
 
 .field-label {
@@ -201,7 +177,7 @@ h3 {
   text-transform: uppercase;
 }
 
-.comparison-cell p:not(.field-label) {
+.cell-card p:not(.field-label) {
   min-width: 0;
   margin: 0;
   color: var(--ink);
@@ -209,10 +185,6 @@ h3 {
   line-height: 1.38;
   overflow-wrap: anywhere;
   white-space: pre-line;
-}
-
-.field-preview {
-  color: var(--muted);
 }
 
 .source-chip {
@@ -260,9 +232,7 @@ h3 {
 
 @media (max-width: 1180px) {
   .comparison-head,
-  .standard-field-row,
-  .comparison-summary-row,
-  .comparison-expanded-row {
+  .standard-field-row {
     grid-template-columns: 1fr;
   }
 

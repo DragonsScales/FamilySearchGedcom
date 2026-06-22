@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import type { CardDropdownItem } from '../../Interfaces/card-dropdown.interface';
 import type {
   FamilySearchCollectorState,
   FamilySearchTraversalMetadata
@@ -14,6 +15,7 @@ import type {
   RelatedPersonView
 } from '../../Interfaces/person-card.interface';
 import type { StoredGedcomImport } from '../../Interfaces/storage.interface';
+import { CardDropdownComponent } from '../card-dropdown/card-dropdown.component';
 import { ExtensionStorageService } from '../extension-storage.service';
 import { FamilySearchTraversalService } from '../familysearch-traversal.service';
 import { buildFamilySearchPersonCards } from '../person-card/familysearch-person-card.mapper';
@@ -23,9 +25,6 @@ interface ComparisonField {
   label: string;
   gedcomValue: string;
   familySearchValue: string;
-  gedcomPreview: string;
-  familySearchPreview: string;
-  preferredPreview: string;
   isCollapsible: boolean;
   defaultOpen: boolean;
   preferred: PreferredValue;
@@ -63,7 +62,7 @@ const EMPTY_VALUE = 'Not listed';
 @Component({
   selector: 'fsg-compare',
   standalone: true,
-  imports: [RouterLink],
+  imports: [CardDropdownComponent, RouterLink],
   templateUrl: './compare.component.html',
   styleUrl: './compare.component.css'
 })
@@ -124,6 +123,20 @@ export class CompareComponent implements OnInit, OnDestroy {
       this.collectorState.set(collectorState);
       this.loadErrorMessage.set('');
     });
+  }
+
+  dropdownItems(value: string): CardDropdownItem[] {
+    if (value === EMPTY_VALUE) return [];
+
+    return value
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => ({
+        id: `${index}:${line}`,
+        title: line,
+        lines: []
+      }));
   }
 }
 
@@ -218,9 +231,6 @@ function buildComparisonFields(
         label: input.label,
         gedcomValue: input.gedcomValue,
         familySearchValue: input.familySearchValue,
-        gedcomPreview: firstLine(input.gedcomValue),
-        familySearchPreview: firstLine(input.familySearchValue),
-        preferredPreview: firstLine(preferred.value),
         isCollapsible: hasMultipleLines(input.gedcomValue) ||
           hasMultipleLines(input.familySearchValue) ||
           hasMultipleLines(preferred.value),
@@ -356,10 +366,6 @@ function formatFamilySearchMarriageFacts(
 
 function getFactPart(fact: NormalizedGedcomFact | FactView, key: 'date' | 'place'): string | undefined {
   return key === 'date' ? fact.date : fact.place;
-}
-
-function firstLine(value: string): string {
-  return value.split('\n')[0]?.trim() || EMPTY_VALUE;
 }
 
 function hasMultipleLines(value: string): boolean {

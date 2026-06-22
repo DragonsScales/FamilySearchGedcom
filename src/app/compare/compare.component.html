@@ -70,19 +70,49 @@
 
         @for (field of row.fields; track field.label) {
         @if (field.isCollapsible) {
-        <details class="comparison-field-row collapsible-field-row" [open]="field.defaultOpen">
-          <summary class="comparison-summary-row">
-            <section class="comparison-cell">
-              <p class="field-label">{{ field.label }}</p>
-              <p class="field-preview">{{ field.gedcomPreview }}</p>
-            </section>
+        <div class="comparison-field-row standard-field-row">
+          <section class="comparison-cell">
+            <fsg-card-dropdown
+              [title]="field.label"
+              [items]="dropdownItems(field.gedcomValue)"
+              [open]="field.defaultOpen"
+            ></fsg-card-dropdown>
+          </section>
 
-            <section class="comparison-cell">
-              <p class="field-label">{{ field.label }}</p>
-              <p class="field-preview">{{ field.familySearchPreview }}</p>
-            </section>
+          <section class="comparison-cell">
+            <fsg-card-dropdown
+              [title]="field.label"
+              [items]="dropdownItems(field.familySearchValue)"
+              [open]="field.defaultOpen"
+            ></fsg-card-dropdown>
+          </section>
 
-            <section class="comparison-cell review-cell">
+          <section class="comparison-cell review-cell">
+            <fsg-card-dropdown
+              [title]="field.label"
+              [items]="dropdownItems(field.preferred.value)"
+              [open]="field.defaultOpen"
+            ></fsg-card-dropdown>
+          </section>
+        </div>
+        } @else {
+        <div class="comparison-field-row standard-field-row">
+          <section class="comparison-cell">
+            <article class="cell-card">
+              <p class="field-label">{{ field.label }}</p>
+              <p>{{ field.gedcomValue }}</p>
+            </article>
+          </section>
+
+          <section class="comparison-cell">
+            <article class="cell-card">
+              <p class="field-label">{{ field.label }}</p>
+              <p>{{ field.familySearchValue }}</p>
+            </article>
+          </section>
+
+          <section class="comparison-cell review-cell">
+            <article class="cell-card">
               <p class="field-label review-label">
                 <span>{{ field.label }}</span>
                 <span
@@ -95,50 +125,8 @@
                   {{ field.preferred.label }}
                 </span>
               </p>
-              <p class="field-preview">{{ field.preferredPreview }}</p>
-            </section>
-          </summary>
-
-          <div class="comparison-expanded-row">
-            <section class="comparison-cell">
-              <p>{{ field.gedcomValue }}</p>
-            </section>
-
-            <section class="comparison-cell">
-              <p>{{ field.familySearchValue }}</p>
-            </section>
-
-            <section class="comparison-cell">
               <p>{{ field.preferred.value }}</p>
-            </section>
-          </div>
-        </details>
-        } @else {
-        <div class="comparison-field-row standard-field-row">
-          <section class="comparison-cell">
-            <p class="field-label">{{ field.label }}</p>
-            <p>{{ field.gedcomValue }}</p>
-          </section>
-
-          <section class="comparison-cell">
-            <p class="field-label">{{ field.label }}</p>
-            <p>{{ field.familySearchValue }}</p>
-          </section>
-
-          <section class="comparison-cell review-cell">
-            <p class="field-label review-label">
-              <span>{{ field.label }}</span>
-              <span
-                class="source-chip"
-                [class.source-same]="field.preferred.source === 'same'"
-                [class.source-new]="field.preferred.source === 'new'"
-                [class.source-review]="field.preferred.source === 'review'"
-                [class.source-empty]="field.preferred.source === 'empty'"
-              >
-                {{ field.preferred.label }}
-              </span>
-            </p>
-            <p>{{ field.preferred.value }}</p>
+            </article>
           </section>
         </div>
         }

@@ -87,120 +87,41 @@
   </dl>
 
   <section class="relationship-grid">
-    <details
+    <fsg-card-dropdown
+      title="Parents"
+      [items]="relatedDropdownItems(person.parents)"
       [open]="person.sections.parentsOpen"
-      (toggle)="onSectionToggle('parentsOpen', $event)"
-    >
-      <summary>Parents <span>{{ person.parents.length }}</span></summary>
-      @if (person.parents.length) {
-      <ul>
-        @for (parent of person.parents; track parent.id) {
-        <li>
-          <strong>{{ parent.name }}</strong>
-        </li>
-        }
-      </ul>
-      } @else {
-      <p class="empty-line">Not listed</p>
-      }
-    </details>
+      (openChange)="onSectionOpenChange('parentsOpen', $event)"
+    ></fsg-card-dropdown>
 
-    <details
+    <fsg-card-dropdown
+      title="Children"
+      [items]="relatedDropdownItems(person.children)"
       [open]="person.sections.childrenOpen"
-      (toggle)="onSectionToggle('childrenOpen', $event)"
-    >
-      <summary>Children <span>{{ person.children.length }}</span></summary>
-      @if (person.children.length) {
-      <ul>
-        @for (child of person.children; track child.id) {
-        <li>
-          <strong>{{ child.name }}</strong>
-        </li>
-        }
-      </ul>
-      } @else {
-      <p class="empty-line">Not listed</p>
-      }
-    </details>
+      (openChange)="onSectionOpenChange('childrenOpen', $event)"
+    ></fsg-card-dropdown>
 
-    <details
+    <fsg-card-dropdown
+      title="Siblings"
+      [items]="relatedDropdownItems(person.siblings)"
       [open]="person.sections.siblingsOpen"
-      (toggle)="onSectionToggle('siblingsOpen', $event)"
-    >
-      <summary>Siblings <span>{{ person.siblings.length }}</span></summary>
-      @if (person.siblings.length) {
-      <ul>
-        @for (sibling of person.siblings; track sibling.id) {
-        <li>
-          <strong>{{ sibling.name }}</strong>
-        </li>
-        }
-      </ul>
-      } @else {
-      <p class="empty-line">Not listed</p>
-      }
-    </details>
+      (openChange)="onSectionOpenChange('siblingsOpen', $event)"
+    ></fsg-card-dropdown>
   </section>
 
   <section class="bottom-folds">
-    <details
+    <fsg-card-dropdown
+      title="Residences"
+      [items]="factDropdownItems(person.residences)"
       [open]="person.sections.residencesOpen"
-      (toggle)="onSectionToggle('residencesOpen', $event)"
-    >
-      <summary>Residences <span>{{ person.residences.length }}</span></summary>
-      @if (person.residences.length) {
-      <div class="fact-list">
-        @for (fact of person.residences; track fact.type + ':' + (fact.date ?? '') + ':' + (fact.place ?? '') + ':' + (fact.value ?? '')) {
-        <div class="mini-fact">
-          <p class="mini-title">{{ fact.label }}</p>
-          @if (fact.date) {
-          <p><strong>Date:</strong> {{ fact.date }}</p>
-          }
-          @if (fact.place) {
-          <p><strong>Place:</strong> {{ fact.place }}</p>
-          }
-          @if (fact.value) {
-          <p><strong>Value:</strong> {{ fact.value }}</p>
-          }
-          @for (note of fact.notes; track note) {
-          <p><strong>Note:</strong> {{ note }}</p>
-          }
-        </div>
-        }
-      </div>
-      } @else {
-      <p class="empty-line">Not listed</p>
-      }
-    </details>
+      (openChange)="onSectionOpenChange('residencesOpen', $event)"
+    ></fsg-card-dropdown>
 
-    <details
+    <fsg-card-dropdown
+      title="Other"
+      [items]="factDropdownItems(person.otherFacts)"
       [open]="person.sections.otherOpen"
-      (toggle)="onSectionToggle('otherOpen', $event)"
-    >
-      <summary>Other <span>{{ person.otherFacts.length }}</span></summary>
-      @if (person.otherFacts.length) {
-      <div class="fact-list">
-        @for (fact of person.otherFacts; track fact.type + ':' + (fact.date ?? '') + ':' + (fact.place ?? '') + ':' + (fact.value ?? '')) {
-        <div class="mini-fact">
-          <p class="mini-title">{{ fact.label }}</p>
-          @if (fact.date) {
-          <p><strong>Date:</strong> {{ fact.date }}</p>
-          }
-          @if (fact.place) {
-          <p><strong>Place:</strong> {{ fact.place }}</p>
-          }
-          @if (fact.value) {
-          <p><strong>Value:</strong> {{ fact.value }}</p>
-          }
-          @for (note of fact.notes; track note) {
-          <p><strong>Note:</strong> {{ note }}</p>
-          }
-        </div>
-        }
-      </div>
-      } @else {
-      <p class="empty-line">Not listed</p>
-      }
-    </details>
+      (openChange)="onSectionOpenChange('otherOpen', $event)"
+    ></fsg-card-dropdown>
   </section>
 </article>
