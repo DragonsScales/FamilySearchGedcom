@@ -6,11 +6,26 @@ import type {
   FamilySearchPageDebugSnapshot,
   FamilySearchRetrievedPerson
 } from '../Interfaces/familysearch-person.interface';
+import type {
+  NormalizedGedcomDocument,
+  NormalizedGedcomPerson
+} from '../Interfaces/gedcom.interface';
+import type {
+  StoredGedcomImport,
+  StoredStartPersonMapping
+} from '../Interfaces/storage.interface';
 import {
   buildFamilySearchPersonDetailsUrl,
   extractFamilySearchPersonIdFromUrl,
   normalizeFamilySearchPersonId
 } from '../familysearch-person-url';
+import {
+  buildGedcomTraversalRoute
+} from '../gedcom-guided-traversal';
+import type {
+  GedcomTraversalBranch,
+  GedcomTraversalUnmatched
+} from '../gedcom-guided-traversal';
 
 interface ChromeError {
   message?: string;
@@ -104,7 +119,7 @@ interface ChromeApi {
 
 interface CollectorOptions {
   maxPages: number;
-  maxDepth: number;
+  maxPagesEnabled: boolean;
   delayMs: number;
   allowedIds: string[];
 }
@@ -114,7 +129,7 @@ interface CollectorOptionsInput {
   personId?: unknown;
   accountAccessConsent?: unknown;
   maxPages?: unknown;
-  maxDepth?: unknown;
+  maxPagesEnabled?: unknown;
   delayMs?: unknown;
   delaySeconds?: unknown;
   allowedIds?: unknown;
@@ -127,11 +142,15 @@ interface RetrievePersonInput {
 
 interface QueueItem {
   personId: string;
+  gedcomPersonId: string;
   name: string;
   relationshipHint: string;
   fromPersonId: string | null;
+  fromGedcomPersonId: string | null;
   depth: number;
   url: string;
+  branch: GedcomTraversalBranch;
+  matchNote?: string;
 }
 
 interface CapturedPerson {
@@ -161,7 +180,22 @@ interface TraversalMetadata {
   source: string;
   depth: number;
   fromPersonId: string | null;
+  gedcomPersonId?: string | null;
+  fromGedcomPersonId?: string | null;
   relationshipHint: string | null;
+  branch?: GedcomTraversalBranch;
+  matchStatus?: 'matched' | 'missing' | 'ambiguous';
+  matchNote?: string;
+}
+
+interface CaptureMetadata {
+  source?: string;
+  expectedFamilySearchId?: string;
+  gedcomPersonId?: string | null;
+  fromGedcomPersonId?: string | null;
+  branch?: GedcomTraversalBranch;
+  matchStatus?: 'matched' | 'missing' | 'ambiguous';
+  matchNote?: string;
 }
 
 interface CollectorState {
@@ -208,6 +242,7 @@ interface MessageEnvelope {
 declare const chrome: ChromeApi;
 
 const STORAGE_KEY = 'familySearchGedcomCollectorState';
+const GEDCOM_IMPORT_KEY = 'gedcomImport';
 const START_PERSON_MAPPING_KEY = 'familySearchGedcomStartPersonMapping';
 const EXTENSION_APP_URL = 'index.html#/gedcom';
 const ALARM_CAPTURE_PAGE = 'familysearchCollector.capturePage';
@@ -226,7 +261,7 @@ function defaultState(): CollectorState {
     records: [],
     options: {
       maxPages: 25,
-      maxDepth: 3,
+      maxPagesEnabled: false,
       delayMs: 6000,
       allowedIds: []
     },
@@ -237,13 +272,13 @@ function defaultState(): CollectorState {
 
 function normalizeOptions(options: CollectorOptionsInput = {}): CollectorOptions {
   const maxPages = clampInteger(options.maxPages, 1, 500, 25);
-  const maxDepth = clampInteger(options.maxDepth, 0, 20, 2);
+  const maxPagesEnabled = options.maxPagesEnabled === true;
   const delayMs = clampInteger(options.delayMs, MIN_DELAY_MS, MAX_DELAY_MS, 6000);
   const allowedIds = Array.isArray(options.allowedIds)
     ? [...new Set(options.allowedIds.map(normalizePersonId).filter(Boolean))]
     : [];
 
-  return { maxPages, maxDepth, delayMs, allowedIds };
+  return { maxPages, maxPagesEnabled, delayMs, allowedIds };
 }
 
 function clampInteger(value: unknown, min: number, max: number, fallback: number): number {
@@ -403,7 +438,14 @@ async function startTraversal(payload: CollectorOptionsInput = {}): Promise<Stat
     throw new Error('Confirm that the extension can use your logged-in FamilySearch session before starting traversal.');
   }
 
-  const rootFamilySearchId = normalizePersonId(payload.familySearchId ?? payload.personId) || await loadMappedFamilySearchId();
+  const { gedcomImport, mapping } = await loadGedcomTraversalContext();
+  const rootGedcomPerson = findGedcomPerson(gedcomImport.document, mapping.gedcomPersonId);
+  if (!rootGedcomPerson) {
+    throw new Error('The saved GEDCOM starting person is no longer present in the imported GEDCOM file.');
+  }
+
+  const rootFamilySearchId = normalizePersonId(payload.familySearchId ?? payload.personId) ||
+    normalizePersonId(mapping.familySearchId);
   if (!rootFamilySearchId) {
     throw new Error('Save a FamilySearch starting person in Mapping before starting traversal.');
   }
@@ -432,12 +474,17 @@ async function startTraversal(payload: CollectorOptionsInput = {}): Promise<Stat
       .map((record) => record.person?.familySearchId)
       .filter((id): id is string => Boolean(id)),
     options,
-    lastEvent: `Traversal started from ${rootFamilySearchId}.`
+    lastEvent: `Traversal started from ${rootFamilySearchId} for GEDCOM ${getGedcomPersonName(rootGedcomPerson)}.`
   });
 
   const captured = await captureAndStore(tab.id, {
     source: 'traversal-start',
-    expectedFamilySearchId: rootFamilySearchId
+    expectedFamilySearchId: rootFamilySearchId,
+    gedcomPersonId: mapping.gedcomPersonId,
+    fromGedcomPersonId: null,
+    branch: 'root',
+    matchStatus: 'matched',
+    matchNote: 'Starting person mapping.'
   });
   scheduleNextNavigation(captured.options.delayMs);
   return summarizeState(captured);
@@ -447,6 +494,29 @@ async function loadMappedFamilySearchId(): Promise<string> {
   const stored = await storageGet(START_PERSON_MAPPING_KEY);
   const mapping = isRecord(stored[START_PERSON_MAPPING_KEY]) ? stored[START_PERSON_MAPPING_KEY] : {};
   return normalizePersonId(mapping['familySearchId']);
+}
+
+async function loadGedcomTraversalContext(): Promise<{
+  gedcomImport: StoredGedcomImport;
+  mapping: StoredStartPersonMapping;
+}> {
+  const gedcomImport = await loadGedcomImport();
+  const mapping = await loadStartPersonMapping();
+  return { gedcomImport, mapping };
+}
+
+async function loadGedcomImport(): Promise<StoredGedcomImport> {
+  const stored = await storageGet(GEDCOM_IMPORT_KEY);
+  const value = stored[GEDCOM_IMPORT_KEY];
+  if (isStoredGedcomImport(value)) return value;
+  throw new Error('Upload a GEDCOM file before starting traversal.');
+}
+
+async function loadStartPersonMapping(): Promise<StoredStartPersonMapping> {
+  const stored = await storageGet(START_PERSON_MAPPING_KEY);
+  const value = stored[START_PERSON_MAPPING_KEY];
+  if (isStoredStartPersonMapping(value) && normalizePersonId(value.familySearchId)) return value;
+  throw new Error('Save a GEDCOM starting person and FamilySearch ID before starting traversal.');
 }
 
 async function openTraversalStartTab(familySearchId: string): Promise<Required<Pick<ChromeTab, 'id' | 'url'>>> {
@@ -481,7 +551,7 @@ async function resetCollector(): Promise<StateSummary> {
 
 async function captureAndStore(
   tabId: number,
-  metadata: Partial<Pick<TraversalMetadata, 'source'>> & { expectedFamilySearchId?: string } = {}
+  metadata: CaptureMetadata = {}
 ): Promise<CollectorState> {
   const response = await sendCaptureMessage(tabId, metadata.expectedFamilySearchId);
   if (!response.ok || !response.capture) {
@@ -492,13 +562,20 @@ async function captureAndStore(
   const state = await loadState();
   const personId = capture.person?.familySearchId ?? null;
   const activeDepth = state.activeItem?.depth ?? 0;
+  const gedcomPersonId = metadata.gedcomPersonId ?? state.activeItem?.gedcomPersonId ?? null;
+  const fromGedcomPersonId = metadata.fromGedcomPersonId ?? state.activeItem?.fromGedcomPersonId ?? null;
   const record: CaptureRecord = {
     ...capture,
     traversal: {
       source: metadata.source ?? 'manual',
       depth: activeDepth,
       fromPersonId: state.activeItem?.fromPersonId ?? null,
-      relationshipHint: state.activeItem?.relationshipHint ?? null
+      gedcomPersonId,
+      fromGedcomPersonId,
+      relationshipHint: state.activeItem?.relationshipHint ?? null,
+      branch: metadata.branch ?? state.activeItem?.branch ?? 'root',
+      matchStatus: metadata.matchStatus ?? 'matched',
+      matchNote: metadata.matchNote ?? state.activeItem?.matchNote
     }
   };
 
@@ -518,8 +595,9 @@ async function captureAndStore(
   }
 
   if (nextState.running) {
-    nextState = enqueueRelationshipLinks(nextState, record, activeDepth);
-    if (nextState.records.length >= nextState.options.maxPages) {
+    const gedcomImport = await loadGedcomImport();
+    nextState = enqueueGedcomExpectedRelatives(nextState, record, activeDepth, gedcomImport.document);
+    if (hasReachedMaxPages(nextState)) {
       nextState = {
         ...nextState,
         running: false,
@@ -534,7 +612,15 @@ async function captureAndStore(
 
 function upsertRecord(records: CaptureRecord[], record: CaptureRecord): CaptureRecord[] {
   const personId = record.person?.familySearchId;
-  if (!personId) return [...records, record];
+  if (!personId) {
+    const gedcomPersonId = record.traversal?.gedcomPersonId;
+    if (!gedcomPersonId) return [...records, record];
+
+    return [
+      ...records.filter((existing) => existing.traversal?.gedcomPersonId !== gedcomPersonId),
+      record
+    ];
+  }
 
   return [
     ...records.filter((existing) => existing.person?.familySearchId !== personId),
@@ -542,39 +628,105 @@ function upsertRecord(records: CaptureRecord[], record: CaptureRecord): CaptureR
   ];
 }
 
-function enqueueRelationshipLinks(state: CollectorState, record: CaptureRecord, currentDepth: number): CollectorState {
-  const currentPersonId = record.person?.familySearchId;
-  const nextDepth = currentDepth + 1;
-  if (nextDepth > state.options.maxDepth) return state;
+function buildUnmatchedGedcomRecord(
+  unmatched: GedcomTraversalUnmatched,
+  fromRecord: CaptureRecord,
+  depth: number
+): CaptureRecord {
+  const fromPersonId = fromRecord.person?.familySearchId ?? null;
+  return {
+    schemaVersion: 1,
+    source: 'gedcom-guided-placeholder',
+    capturedAt: new Date().toISOString(),
+    url: '',
+    title: '',
+    person: {
+      familySearchId: null,
+      displayName: ''
+    },
+    facts: [],
+    relationships: [],
+    traversal: {
+      source: 'gedcom-guided-placeholder',
+      depth,
+      fromPersonId,
+      gedcomPersonId: unmatched.gedcomPersonId,
+      fromGedcomPersonId: fromRecord.traversal?.gedcomPersonId ?? null,
+      relationshipHint: unmatched.relationshipHint,
+      branch: unmatched.branch,
+      matchStatus: unmatched.status,
+      matchNote: `${unmatched.name}: ${unmatched.matchNote}`
+    }
+  };
+}
 
+function enqueueGedcomExpectedRelatives(
+  state: CollectorState,
+  record: CaptureRecord,
+  currentDepth: number,
+  document: NormalizedGedcomDocument
+): CollectorState {
+  const currentPersonId = record.person?.familySearchId;
+  const currentGedcomPersonId = record.traversal?.gedcomPersonId;
+  if (!currentGedcomPersonId) return state;
+
+  const nextDepth = currentDepth + 1;
   const allowed = new Set(state.options.allowedIds);
   const hasAllowedList = allowed.size > 0;
-  const seen = new Set([
+  const seenFamilySearchIds = new Set([
     ...state.visitedPersonIds,
     ...state.queue.map((item) => item.personId)
   ]);
+  const seenGedcomPersonIds = new Set([
+    ...state.records
+      .map((existingRecord) => existingRecord.traversal?.gedcomPersonId)
+      .filter((gedcomPersonId): gedcomPersonId is string => Boolean(gedcomPersonId)),
+    ...state.queue.map((item) => item.gedcomPersonId)
+  ]);
   const queue = [...state.queue];
+  let records = state.records;
+  let queuedCount = 0;
+  let unmatchedCount = 0;
+  const route = buildGedcomTraversalRoute({
+    document,
+    currentGedcomPersonId,
+    currentBranch: record.traversal?.branch ?? 'root',
+    relationships: normalizeCapturedRelationships(record.relationships ?? []),
+    seenGedcomPersonIds: [...seenGedcomPersonIds],
+    seenFamilySearchIds: [...seenFamilySearchIds]
+  });
 
-  for (const relationship of record.relationships ?? []) {
-    const personId = normalizePersonId(relationship.personId);
-    if (!personId || personId === currentPersonId || seen.has(personId)) continue;
+  for (const match of route.matches) {
+    const personId = normalizePersonId(match.familySearchId);
+    if (!personId || personId === currentPersonId || seenFamilySearchIds.has(personId)) continue;
     if (hasAllowedList && !allowed.has(personId)) continue;
 
     queue.push({
       personId,
-      name: relationship.name ?? '',
-      relationshipHint: relationship.relationshipHint ?? '',
+      gedcomPersonId: match.gedcomPersonId,
+      name: match.name,
+      relationshipHint: match.relationshipHint,
       fromPersonId: currentPersonId ?? null,
+      fromGedcomPersonId: currentGedcomPersonId,
       depth: nextDepth,
-      url: buildFamilySearchPersonDetailsUrl(personId)
+      url: buildFamilySearchPersonDetailsUrl(personId),
+      branch: match.branch,
+      matchNote: match.matchNote
     });
-    seen.add(personId);
+    queuedCount += 1;
+    seenFamilySearchIds.add(personId);
+  }
+
+  for (const unmatched of route.unmatched) {
+    records = upsertRecord(records, buildUnmatchedGedcomRecord(unmatched, record, nextDepth));
+    unmatchedCount += 1;
   }
 
   return {
     ...state,
+    records,
     queue,
-    lastEvent: `Captured ${currentPersonId ?? 'page'} and queued ${queue.length} total person page(s).`
+    lastEvent: `Captured ${currentPersonId ?? 'page'} and queued ${queuedCount} GEDCOM-guided page(s); ${unmatchedCount} expected relative(s) need review.`
   };
 }
 
@@ -586,7 +738,7 @@ async function navigateNextQueued(): Promise<CollectorState> {
   const state = await loadState();
   if (!state.running) return state;
 
-  if (state.records.length >= state.options.maxPages) {
+  if (hasReachedMaxPages(state)) {
     return saveState({
       ...state,
       running: false,
@@ -617,6 +769,15 @@ async function navigateNextQueued(): Promise<CollectorState> {
   return nextState;
 }
 
+function countCapturedFamilySearchRecords(records: CaptureRecord[]): number {
+  return records.filter((record) => Boolean(record.person?.familySearchId)).length;
+}
+
+function hasReachedMaxPages(state: CollectorState): boolean {
+  return state.options.maxPagesEnabled &&
+    countCapturedFamilySearchRecords(state.records) >= state.options.maxPages;
+}
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete') return;
   if (!tab.url?.startsWith('https://www.familysearch.org/')) return;
@@ -637,7 +798,11 @@ async function captureActiveTraversalPage(): Promise<CollectorState> {
   const state = await loadState();
   if (!state.running || !state.activeTabId) return state;
 
-  const captured = await captureAndStore(state.activeTabId, { source: 'traversal' });
+  const captured = await captureAndStore(state.activeTabId, {
+    source: 'traversal',
+    expectedFamilySearchId: state.activeItem?.personId,
+    matchStatus: 'matched'
+  });
   if (captured.running) scheduleNextNavigation(captured.options.delayMs);
   return captured;
 }
@@ -840,11 +1005,18 @@ function tabsSendMessage(tabId: number, message: unknown): Promise<CaptureRespon
 function isQueueItem(value: unknown): value is QueueItem {
   return isRecord(value) &&
     typeof value['personId'] === 'string' &&
+    typeof value['gedcomPersonId'] === 'string' &&
     typeof value['name'] === 'string' &&
     typeof value['relationshipHint'] === 'string' &&
     (typeof value['fromPersonId'] === 'string' || value['fromPersonId'] === null) &&
+    (typeof value['fromGedcomPersonId'] === 'string' || value['fromGedcomPersonId'] === null) &&
     typeof value['depth'] === 'number' &&
-    typeof value['url'] === 'string';
+    typeof value['url'] === 'string' &&
+    isGedcomTraversalBranch(value['branch']);
+}
+
+function isGedcomTraversalBranch(value: unknown): value is GedcomTraversalBranch {
+  return value === 'root' || value === 'ancestor' || value === 'descendant';
 }
 
 function isCaptureRecord(value: unknown): value is CaptureRecord {
@@ -853,6 +1025,64 @@ function isCaptureRecord(value: unknown): value is CaptureRecord {
 
 function isCaptureResponse(value: unknown): value is CaptureResponse {
   return isRecord(value) && typeof value['ok'] === 'boolean';
+}
+
+function isStoredGedcomImport(value: unknown): value is StoredGedcomImport {
+  return isRecord(value) &&
+    typeof value['fileName'] === 'string' &&
+    typeof value['fileSize'] === 'number' &&
+    typeof value['importedAt'] === 'string' &&
+    isNormalizedGedcomDocument(value['document']);
+}
+
+function isStoredStartPersonMapping(value: unknown): value is StoredStartPersonMapping {
+  return isRecord(value) &&
+    typeof value['gedcomPersonId'] === 'string' &&
+    typeof value['familySearchId'] === 'string' &&
+    typeof value['updatedAt'] === 'string';
+}
+
+function isNormalizedGedcomDocument(value: unknown): value is NormalizedGedcomDocument {
+  return isRecord(value) &&
+    isRecord(value['metadata']) &&
+    Array.isArray(value['people']) &&
+    value['people'].every(isNormalizedGedcomPerson) &&
+    Array.isArray(value['families']) &&
+    value['families'].every(isNormalizedGedcomFamily);
+}
+
+function isNormalizedGedcomPerson(value: unknown): value is NormalizedGedcomPerson {
+  return isRecord(value) &&
+    typeof value['id'] === 'string' &&
+    Array.isArray(value['names']) &&
+    Array.isArray(value['facts']) &&
+    Array.isArray(value['parentFamilyIds']) &&
+    value['parentFamilyIds'].every((item) => typeof item === 'string') &&
+    Array.isArray(value['spouseFamilyIds']) &&
+    value['spouseFamilyIds'].every((item) => typeof item === 'string') &&
+    isRecord(value['relationships']);
+}
+
+function isNormalizedGedcomFamily(value: unknown): boolean {
+  return isRecord(value) &&
+    typeof value['id'] === 'string' &&
+    Array.isArray(value['childIds']) &&
+    value['childIds'].every((item) => typeof item === 'string') &&
+    Array.isArray(value['facts']);
+}
+
+function findGedcomPerson(
+  document: NormalizedGedcomDocument,
+  gedcomPersonId: string
+): NormalizedGedcomPerson | undefined {
+  return document.people.find((person) => person.id === gedcomPersonId);
+}
+
+function getGedcomPersonName(person: NormalizedGedcomPerson): string {
+  const name = person.names[0];
+  if (!name) return person.id;
+  if (name.given || name.surname) return [name.given, name.surname].filter(Boolean).join(' ');
+  return name.full || person.id;
 }
 
 function normalizeCapturedRelationships(relationships: CapturedRelationship[]): FamilySearchCapturedRelationship[] {

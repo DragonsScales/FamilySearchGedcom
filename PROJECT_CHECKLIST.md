@@ -35,7 +35,7 @@ Target user flow:
 - [x] Captured visible data from a FamilySearch person page.
 - [x] Extracted related FamilySearch IDs from visible page text/links.
 - [x] Navigated to related person pages by direct FamilySearch person URL.
-- [x] Added traversal queue, visited ID tracking, depth limit, page limit, delay, and stop/reset controls.
+- [x] Added traversal queue, visited ID tracking, optional page limit, delay, and stop/reset controls.
 - [x] Added JSON export for collected FamilySearch snapshots.
 - [x] Proved an extension-owned app page can serve as the control center while the extension still opens/navigates FamilySearch tabs and reads page data through content scripts.
 - [x] Built the first Angular extension app page for local GEDCOM upload.
@@ -81,14 +81,14 @@ Target user flow:
 
 ## Milestone 4: GEDCOM-Guided Traversal
 
-- [ ] Use the mapped GEDCOM person as the traversal root.
-- [ ] Decide expected branches from the GEDCOM graph instead of crawling everything visible.
-- [ ] For each FamilySearch page, extract related person IDs by relationship context.
-- [ ] Match extracted FamilySearch relatives to expected GEDCOM relatives.
-- [ ] Queue only branches that the GEDCOM says should be checked.
-- [ ] Store traversal state: current queue, visited FamilySearch IDs, mapped GEDCOM IDs, parent/child path, and relationship reason.
-- [ ] Avoid revisiting already captured FamilySearch IDs.
-- [ ] Continue traversal until all expected GEDCOM-covered branches are captured or marked missing/unmatched.
+- [x] Use the mapped GEDCOM person as the traversal root.
+- [x] Decide expected branches from the GEDCOM graph instead of crawling everything visible.
+- [x] For each FamilySearch page, extract related person IDs by relationship context.
+- [x] Match extracted FamilySearch relatives to expected GEDCOM relatives using relationship type, first name, and birth year.
+- [x] Queue only branches that the GEDCOM says should be checked.
+- [x] Store traversal state: current queue, visited FamilySearch IDs, mapped GEDCOM IDs, parent/child path, and relationship reason.
+- [x] Avoid revisiting already captured FamilySearch IDs.
+- [x] Continue traversal until all expected GEDCOM-covered branches are captured or marked missing/unmatched.
 - [ ] Add resume support after popup/browser interruption.
 
 ## Milestone 5: Normalization

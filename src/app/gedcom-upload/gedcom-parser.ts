@@ -132,10 +132,19 @@ function parsePerson(node: GedcomNode): NormalizedGedcomPerson {
 }
 
 function parseFamily(node: GedcomNode): NormalizedGedcomFamily {
+  const husbandIds = node.children
+    .filter((child) => child.tag === 'HUSB' && child.value)
+    .map((child) => normalizePointer(child.value));
+  const wifeIds = node.children
+    .filter((child) => child.tag === 'WIFE' && child.value)
+    .map((child) => normalizePointer(child.value));
+
   return {
     id: normalizePointer(node.pointer),
-    husbandId: normalizePointer(node.children.find((child) => child.tag === 'HUSB')?.value),
-    wifeId: normalizePointer(node.children.find((child) => child.tag === 'WIFE')?.value),
+    husbandId: husbandIds[0],
+    wifeId: wifeIds[0],
+    husbandIds,
+    wifeIds,
     childIds: node.children
       .filter((child) => child.tag === 'CHIL' && child.value)
       .map((child) => normalizePointer(child.value)),
@@ -178,8 +187,7 @@ function buildRelationships(
     const family = familyById.get(familyId);
     if (!family) continue;
 
-    if (family.husbandId) parents.add(family.husbandId);
-    if (family.wifeId) parents.add(family.wifeId);
+    for (const parentId of getFamilySpouseIds(family)) parents.add(parentId);
     for (const childId of family.childIds) {
       if (childId !== person.id) siblings.add(childId);
     }
@@ -189,8 +197,9 @@ function buildRelationships(
     const family = familyById.get(familyId);
     if (!family) continue;
 
-    if (family.husbandId && family.husbandId !== person.id) spouses.add(family.husbandId);
-    if (family.wifeId && family.wifeId !== person.id) spouses.add(family.wifeId);
+    for (const spouseId of getFamilySpouseIds(family)) {
+      if (spouseId !== person.id) spouses.add(spouseId);
+    }
     for (const childId of family.childIds) children.add(childId);
   }
 
@@ -200,6 +209,13 @@ function buildRelationships(
     children: [...children],
     siblings: [...siblings]
   };
+}
+
+function getFamilySpouseIds(family: NormalizedGedcomFamily): string[] {
+  return [
+    ...(family.husbandIds ?? [family.husbandId].filter((id): id is string => Boolean(id))),
+    ...(family.wifeIds ?? [family.wifeId].filter((id): id is string => Boolean(id)))
+  ];
 }
 
 function joinContinuationText(node: GedcomNode): string {

@@ -6,25 +6,34 @@ import type {
 
 export interface FamilySearchCollectorOptions {
   maxPages: number;
-  maxDepth: number;
+  maxPagesEnabled: boolean;
   delayMs: number;
   allowedIds: string[];
 }
 
 export interface FamilySearchTraversalQueueItem {
   personId: string;
+  gedcomPersonId: string;
   name: string;
   relationshipHint: string;
   fromPersonId: string | null;
+  fromGedcomPersonId: string | null;
   depth: number;
   url: string;
+  branch: 'root' | 'ancestor' | 'descendant';
+  matchNote?: string;
 }
 
 export interface FamilySearchTraversalMetadata {
   source: string;
   depth: number;
   fromPersonId: string | null;
+  gedcomPersonId?: string | null;
+  fromGedcomPersonId?: string | null;
   relationshipHint: string | null;
+  branch?: 'root' | 'ancestor' | 'descendant';
+  matchStatus?: 'matched' | 'missing' | 'ambiguous';
+  matchNote?: string;
 }
 
 export interface FamilySearchCaptureRecord {
@@ -60,6 +69,6 @@ export interface FamilySearchTraversalStartOptions {
   familySearchId?: string;
   accountAccessConsent: boolean;
   maxPages: number;
-  maxDepth: number;
+  maxPagesEnabled: boolean;
   delayMs: number;
 }

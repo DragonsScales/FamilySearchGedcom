@@ -47,7 +47,7 @@ export function buildFamilySearchPersonCard(
     referenceId: person.familySearchId,
     referenceUrl: buildFamilySearchPersonDetailsUrl(person.familySearchId),
     name,
-    gender: sex?.value || 'Not listed',
+    gender: formatGenderValue(sex?.value),
     alternateNames: [],
     birth: findFactView(factViews, 'Birth'),
     death: findFactView(factViews, 'Death'),
@@ -81,6 +81,10 @@ function findCapturedFactValue(
   const prefix = `${valueLabel}:`;
   const value = fact.values.find((candidate) => candidate.toLowerCase().startsWith(prefix.toLowerCase()));
   return value?.slice(prefix.length).trim() ?? '';
+}
+
+function formatGenderValue(value: string | undefined): string {
+  return value?.replace(/^Value:\s*/i, '').trim() || 'Not listed';
 }
 
 function cleanTitleName(value: string): string {

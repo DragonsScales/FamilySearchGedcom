@@ -46,8 +46,8 @@ export class TraversalComponent implements OnInit, OnDestroy {
   readonly actionStatusMessage = signal('');
   readonly isBusy = signal(false);
   readonly accountAccessConsent = signal(false);
+  readonly maxPagesEnabled = signal(false);
   readonly maxPagesInput = signal('25');
-  readonly maxDepthInput = signal('3');
   readonly delaySecondsInput = signal('6');
   readonly settings = signal<CardSettings>({
     relationshipsOpen: false,
@@ -124,8 +124,8 @@ export class TraversalComponent implements OnInit, OnDestroy {
       const state = await this.traversal.startTraversal({
         familySearchId,
         accountAccessConsent: this.accountAccessConsent(),
+        maxPagesEnabled: this.maxPagesEnabled(),
         maxPages: parsePositiveInteger(this.maxPagesInput(), 25),
-        maxDepth: parseNonNegativeInteger(this.maxDepthInput(), 3),
         delayMs: parseDelaySeconds(this.delaySecondsInput(), 6)
       });
       this.collectorState.set(state);
@@ -179,8 +179,8 @@ export class TraversalComponent implements OnInit, OnDestroy {
     this.maxPagesInput.set((event.target as HTMLInputElement).value);
   }
 
-  setMaxDepth(event: Event): void {
-    this.maxDepthInput.set((event.target as HTMLInputElement).value);
+  setMaxPagesEnabled(event: Event): void {
+    this.maxPagesEnabled.set((event.target as HTMLInputElement).checked);
   }
 
   setDelaySeconds(event: Event): void {
@@ -224,7 +224,7 @@ export class TraversalComponent implements OnInit, OnDestroy {
     if (this.optionsLoaded) return;
 
     this.maxPagesInput.set(String(state.options.maxPages));
-    this.maxDepthInput.set(String(state.options.maxDepth));
+    this.maxPagesEnabled.set(state.options.maxPagesEnabled);
     this.delaySecondsInput.set(formatSeconds(state.options.delayMs));
     this.optionsLoaded = true;
   }
@@ -233,11 +233,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
 function parsePositiveInteger(value: string, fallback: number): number {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function parseNonNegativeInteger(value: string, fallback: number): number {
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 function parseDelaySeconds(value: string, fallbackSeconds: number): number {

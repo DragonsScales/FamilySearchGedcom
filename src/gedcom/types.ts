@@ -44,6 +44,8 @@ export interface GedcomFamily {
   id: string;
   husbandId?: string;
   wifeId?: string;
+  husbandIds?: string[];
+  wifeIds?: string[];
   childIds: string[];
   facts: GedcomFact[];
 }

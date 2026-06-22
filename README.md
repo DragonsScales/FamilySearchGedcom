@@ -36,4 +36,4 @@ npm run typecheck
 2. Open `chrome://extensions`.
 3. Enable Developer Mode.
 4. Click Load unpacked.
-5. Select `/Users/Riley/Repos/FamilySearchGedcom/extension/familysearch-collector`.
+5. Select `/FamilySearchGedcom/extension/familysearch-collector`.

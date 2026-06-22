@@ -46,24 +46,23 @@
 
   <section class="control-panel">
     <div class="field-grid">
+      <label class="limit-toggle">
+        <input
+          type="checkbox"
+          [checked]="maxPagesEnabled()"
+          (change)="setMaxPagesEnabled($event)"
+        >
+        <span>Limit Pages</span>
+      </label>
       <label>
         <span>Max Pages</span>
         <input
           type="number"
           min="1"
           step="1"
+          [disabled]="!maxPagesEnabled()"
           [value]="maxPagesInput()"
           (input)="setMaxPages($event)"
-        >
-      </label>
-      <label>
-        <span>Max Depth</span>
-        <input
-          type="number"
-          min="0"
-          step="1"
-          [value]="maxDepthInput()"
-          (input)="setMaxDepth($event)"
         >
       </label>
       <label>
@@ -84,7 +83,7 @@
         [checked]="accountAccessConsent()"
         (change)="setAccountAccessConsent($event)"
       >
-      <span>Use my logged-in FamilySearch account to open and read person pages for this traversal.</span>
+      <span>Use my FamilySearch account to open and read person pages for traversal (you will need to be logged in).</span>
     </label>
 
     <div class="actions">

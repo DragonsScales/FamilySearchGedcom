@@ -88,10 +88,10 @@ It currently normalizes:
 
 - GEDCOM metadata: source, version, charset, imported time.
 - People: IDs, names, sex, core facts, parent family IDs, spouse family IDs.
-- Families: husband, wife, children, family facts.
+- Families: husband IDs, wife IDs, children, family facts. The singular `husbandId`/`wifeId` fields remain for compatibility, and plural `husbandIds`/`wifeIds` preserve same-role spouse or parent entries.
 - Relationships: parents, spouses, children, siblings.
 - Facts: type, date, place, value, notes.
-- Excess data stored in other
+- Excess data stored in other fact/card sections.
 
 The normalized document shape is stored as `NormalizedGedcomDocument`.
 
@@ -107,7 +107,7 @@ Storage uses `chrome.storage.local`
 
 Important keys:
 
-- `familySearchGedcomImport`: The uploaded and normalized GEDCOM import.
+- `gedcomImport`: The uploaded and normalized GEDCOM import.
 - `familySearchGedcomStartPersonMapping`: The selected GEDCOM starting person and optional FamilySearch ID.
 - `familySearchGedcomCollectorState`: Background traversal/capture state from the extension runtime.
 
@@ -155,7 +155,10 @@ The background worker is responsible for:
 
 - Opening the Angular extension page when the extension icon is clicked.
 - Coordinating capture/traversal messages.
-- Tracking queue, visited FamilySearch IDs, active tab, records, limits, and delay.
+- Tracking queue, visited FamilySearch IDs, GEDCOM person IDs, active tab, records, limits, and delay.
+- Loading the stored GEDCOM import and start-person mapping for GEDCOM-guided traversal.
+- Queueing only expected GEDCOM relatives: father, mother, GEDCOM-listed spouses, and children.
+- Storing placeholder records when an expected GEDCOM relative is missing or ambiguous in the visible FamilySearch relationships.
 - Navigating to direct FamilySearch person URLs.
 - Storing traversal state in `chrome.storage.local`.
 
@@ -213,13 +216,12 @@ Working:
 - GEDCOM starting-person selection from the results cards.
 - Mapping route from the selected GEDCOM card to a retrieved FamilySearch person card by manually entered ID.
 - Extension runtime proof-of-concept for visible FamilySearch capture.
-- Queue-based traversal scaffolding in the background worker.
+- GEDCOM-guided traversal from the mapped starting person through expected father, mother, spouse, and child branches.
+- Missing/ambiguous expected relatives are stored as placeholder traversal records for future comparison UI.
 - TypeScript source for extension runtime, bundled to manifest JavaScript.
 
 Not done yet:
 
-- Full GEDCOM-guided traversal from the Angular UI.
-- Matching FamilySearch relatives to expected GEDCOM relatives.
 - Normalizing captured FamilySearch snapshots into a comparison model.
 - Comparison engine.
 - Final discrepancy card UI.

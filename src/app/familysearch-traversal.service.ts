@@ -103,7 +103,7 @@ function normalizeCollectorOptions(value: unknown): FamilySearchCollectorOptions
   const options = isRecord(value) ? value : {};
   return {
     maxPages: getNumber(options['maxPages'], 25),
-    maxDepth: getNumber(options['maxDepth'], 3),
+    maxPagesEnabled: getBoolean(options['maxPagesEnabled']),
     delayMs: getNumber(options['delayMs'], 6000),
     allowedIds: getArray(options['allowedIds']).filter((item): item is string => typeof item === 'string')
   };
@@ -114,11 +114,15 @@ function normalizeQueueItem(value: unknown): FamilySearchTraversalQueueItem | nu
 
   return {
     personId: getString(value['personId']),
+    gedcomPersonId: getString(value['gedcomPersonId']),
     name: getString(value['name']),
     relationshipHint: getString(value['relationshipHint']),
     fromPersonId: getNullableString(value['fromPersonId']),
+    fromGedcomPersonId: getNullableString(value['fromGedcomPersonId']),
     depth: getNumber(value['depth'], 0),
-    url: getString(value['url'])
+    url: getString(value['url']),
+    branch: getTraversalBranch(value['branch']),
+    matchNote: getOptionalString(value['matchNote'])
   };
 }
 
@@ -157,7 +161,12 @@ function normalizeTraversalMetadata(value: unknown): FamilySearchTraversalMetada
     source: getString(value['source']),
     depth: getNumber(value['depth'], 0),
     fromPersonId: getNullableString(value['fromPersonId']),
-    relationshipHint: getNullableString(value['relationshipHint'])
+    gedcomPersonId: getNullableString(value['gedcomPersonId']),
+    fromGedcomPersonId: getNullableString(value['fromGedcomPersonId']),
+    relationshipHint: getNullableString(value['relationshipHint']),
+    branch: getTraversalBranch(value['branch']),
+    matchStatus: getTraversalMatchStatus(value['matchStatus']),
+    matchNote: getOptionalString(value['matchNote'])
   };
 }
 
@@ -236,6 +245,14 @@ function getOptionalString(value: unknown): string | undefined {
 
 function getNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
+}
+
+function getTraversalBranch(value: unknown): 'root' | 'ancestor' | 'descendant' {
+  return value === 'root' || value === 'ancestor' || value === 'descendant' ? value : 'root';
+}
+
+function getTraversalMatchStatus(value: unknown): 'matched' | 'missing' | 'ambiguous' | undefined {
+  return value === 'matched' || value === 'missing' || value === 'ambiguous' ? value : undefined;
 }
 
 function getNumber(value: unknown, fallback: number): number {
