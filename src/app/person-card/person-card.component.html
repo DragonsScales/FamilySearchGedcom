@@ -89,21 +89,21 @@
   <section class="relationship-grid">
     <fsg-card-dropdown
       title="Parents"
-      [items]="relatedDropdownItems(person.parents)"
+      [items]="relatedPeopleToDropdownItems(person.parents)"
       [open]="person.sections.parentsOpen"
       (openChange)="onSectionOpenChange('parentsOpen', $event)"
     ></fsg-card-dropdown>
 
     <fsg-card-dropdown
       title="Children"
-      [items]="relatedDropdownItems(person.children)"
+      [items]="relatedPeopleToDropdownItems(person.children)"
       [open]="person.sections.childrenOpen"
       (openChange)="onSectionOpenChange('childrenOpen', $event)"
     ></fsg-card-dropdown>
 
     <fsg-card-dropdown
       title="Siblings"
-      [items]="relatedDropdownItems(person.siblings)"
+      [items]="relatedPeopleToDropdownItems(person.siblings)"
       [open]="person.sections.siblingsOpen"
       (openChange)="onSectionOpenChange('siblingsOpen', $event)"
     ></fsg-card-dropdown>
@@ -112,14 +112,14 @@
   <section class="bottom-folds">
     <fsg-card-dropdown
       title="Residences"
-      [items]="factDropdownItems(person.residences)"
+      [items]="factsToDropdownItems(person.residences)"
       [open]="person.sections.residencesOpen"
       (openChange)="onSectionOpenChange('residencesOpen', $event)"
     ></fsg-card-dropdown>
 
     <fsg-card-dropdown
       title="Other"
-      [items]="factDropdownItems(person.otherFacts)"
+      [items]="factsToDropdownItems(person.otherFacts)"
       [open]="person.sections.otherOpen"
       (openChange)="onSectionOpenChange('otherOpen', $event)"
     ></fsg-card-dropdown>

@@ -211,7 +211,8 @@ h3 {
   background: rgba(242, 204, 123, 0.78);
 }
 
-.source-review {
+.source-review,
+.source-missing {
   color: #7d2518;
   background: rgba(185, 80, 56, 0.12);
 }

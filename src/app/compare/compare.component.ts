@@ -1,6 +1,9 @@
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { CardDropdownItem } from '../../Interfaces/card-dropdown.interface';
+import type {
+  CardDropdownBadgeSource,
+  CardDropdownItem
+} from '../../Interfaces/card-dropdown.interface';
 import type {
   FamilySearchCollectorState,
   FamilySearchTraversalMetadata
@@ -16,6 +19,11 @@ import type {
 } from '../../Interfaces/person-card.interface';
 import type { StoredGedcomImport } from '../../Interfaces/storage.interface';
 import { CardDropdownComponent } from '../card-dropdown/card-dropdown.component';
+import {
+  factsToDropdownItems,
+  relatedPeopleToDropdownItems,
+  textToDropdownItems
+} from '../card-dropdown/card-dropdown-items';
 import { ExtensionStorageService } from '../extension-storage.service';
 import { FamilySearchTraversalService } from '../familysearch-traversal.service';
 import { buildFamilySearchPersonCards } from '../person-card/familysearch-person-card.mapper';
@@ -25,6 +33,9 @@ interface ComparisonField {
   label: string;
   gedcomValue: string;
   familySearchValue: string;
+  gedcomDropdownItems: CardDropdownItem[];
+  familySearchDropdownItems: CardDropdownItem[];
+  preferredDropdownItems: CardDropdownItem[];
   isCollapsible: boolean;
   defaultOpen: boolean;
   preferred: PreferredValue;
@@ -41,7 +52,7 @@ interface ComparisonPersonRow {
 }
 
 interface PreferredValue {
-  source: 'same' | 'new' | 'review' | 'empty';
+  source: CardDropdownBadgeSource;
   label: string;
   value: string;
 }
@@ -50,6 +61,9 @@ interface ComparisonFieldInput {
   label: string;
   gedcomValue: string;
   familySearchValue: string;
+  gedcomDropdownItems: CardDropdownItem[];
+  familySearchDropdownItems: CardDropdownItem[];
+  forceDropdown: boolean;
 }
 
 const DEFAULT_CARD_SETTINGS = {
@@ -125,18 +139,10 @@ export class CompareComponent implements OnInit, OnDestroy {
     });
   }
 
-  dropdownItems(value: string): CardDropdownItem[] {
-    if (value === EMPTY_VALUE) return [];
-
-    return value
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line, index) => ({
-        id: `${index}:${line}`,
-        title: line,
-        lines: []
-      }));
+  dropdownItems(field: ComparisonField, source: 'gedcom' | 'familySearch' | 'preferred'): CardDropdownItem[] {
+    if (source === 'gedcom') return field.gedcomDropdownItems;
+    if (source === 'familySearch') return field.familySearchDropdownItems;
+    return field.preferredDropdownItems;
   }
 }
 
@@ -205,10 +211,34 @@ function buildComparisonFields(
     fieldInput('Christening Place', gedcomCard?.christening?.place, familySearchCard?.christening?.place),
     fieldInput('Burial Date', gedcomCard?.burial?.date, familySearchCard?.burial?.date),
     fieldInput('Burial Place', gedcomCard?.burial?.place, familySearchCard?.burial?.place),
-    fieldInput('Parents', formatRelatedPeople(gedcomCard?.parents), formatRelatedPeople(familySearchCard?.parents)),
-    fieldInput('Spouse', formatRelatedPeople(gedcomCard?.spouses), formatRelatedPeople(familySearchCard?.spouses)),
-    fieldInput('Children', formatRelatedPeople(gedcomCard?.children), formatRelatedPeople(familySearchCard?.children)),
-    fieldInput('Siblings', formatRelatedPeople(gedcomCard?.siblings), formatRelatedPeople(familySearchCard?.siblings)),
+    fieldInput(
+      'Parents',
+      formatRelatedPeople(gedcomCard?.parents),
+      formatRelatedPeople(familySearchCard?.parents),
+      relatedPeopleToDropdownItems(gedcomCard?.parents ?? []),
+      relatedPeopleToDropdownItems(familySearchCard?.parents ?? [])
+    ),
+    fieldInput(
+      'Spouse',
+      formatRelatedPeople(gedcomCard?.spouses),
+      formatRelatedPeople(familySearchCard?.spouses),
+      relatedPeopleToDropdownItems(gedcomCard?.spouses ?? []),
+      relatedPeopleToDropdownItems(familySearchCard?.spouses ?? [])
+    ),
+    fieldInput(
+      'Children',
+      formatRelatedPeople(gedcomCard?.children),
+      formatRelatedPeople(familySearchCard?.children),
+      relatedPeopleToDropdownItems(gedcomCard?.children ?? []),
+      relatedPeopleToDropdownItems(familySearchCard?.children ?? [])
+    ),
+    fieldInput(
+      'Siblings',
+      formatRelatedPeople(gedcomCard?.siblings),
+      formatRelatedPeople(familySearchCard?.siblings),
+      relatedPeopleToDropdownItems(gedcomCard?.siblings ?? []),
+      relatedPeopleToDropdownItems(familySearchCard?.siblings ?? [])
+    ),
     fieldInput(
       'Marriage Date',
       formatGedcomMarriageFacts(document, gedcomPersonId, 'date'),
@@ -219,8 +249,22 @@ function buildComparisonFields(
       formatGedcomMarriageFacts(document, gedcomPersonId, 'place'),
       formatFamilySearchMarriageFacts(familySearchCard?.otherFacts, 'place')
     ),
-    fieldInput('Residences', formatFacts(gedcomCard?.residences), formatFacts(familySearchCard?.residences)),
-    fieldInput('Other', formatOtherFacts(gedcomCard?.otherFacts), formatOtherFacts(familySearchCard?.otherFacts))
+    fieldInput(
+      'Residences',
+      formatFacts(gedcomCard?.residences),
+      formatFacts(familySearchCard?.residences),
+      factsToDropdownItems(gedcomCard?.residences ?? []),
+      factsToDropdownItems(familySearchCard?.residences ?? []),
+      true
+    ),
+    fieldInput(
+      'Other',
+      formatOtherFacts(gedcomCard?.otherFacts),
+      formatOtherFacts(familySearchCard?.otherFacts),
+      factsToDropdownItems(filterOtherFacts(gedcomCard?.otherFacts)),
+      factsToDropdownItems(filterOtherFacts(familySearchCard?.otherFacts)),
+      true
+    )
   ];
 
   return fieldInputs
@@ -231,7 +275,15 @@ function buildComparisonFields(
         label: input.label,
         gedcomValue: input.gedcomValue,
         familySearchValue: input.familySearchValue,
-        isCollapsible: hasMultipleLines(input.gedcomValue) ||
+        gedcomDropdownItems: input.gedcomDropdownItems.length
+          ? input.gedcomDropdownItems
+          : textToDropdownItems(input.gedcomValue),
+        familySearchDropdownItems: input.familySearchDropdownItems.length
+          ? input.familySearchDropdownItems
+          : textToDropdownItems(input.familySearchValue),
+        preferredDropdownItems: preferredDropdownItems(input, preferred),
+        isCollapsible: input.forceDropdown ||
+          hasMultipleLines(input.gedcomValue) ||
           hasMultipleLines(input.familySearchValue) ||
           hasMultipleLines(preferred.value),
         defaultOpen: input.label !== 'Residences',
@@ -243,13 +295,35 @@ function buildComparisonFields(
 function fieldInput(
   label: string,
   gedcomValue: string | undefined,
-  familySearchValue: string | undefined
+  familySearchValue: string | undefined,
+  gedcomDropdownItems: CardDropdownItem[] = [],
+  familySearchDropdownItems: CardDropdownItem[] = [],
+  forceDropdown = false
 ): ComparisonFieldInput {
   return {
     label,
     gedcomValue: normalizeDisplayValue(gedcomValue),
-    familySearchValue: normalizeDisplayValue(familySearchValue)
+    familySearchValue: normalizeDisplayValue(familySearchValue),
+    gedcomDropdownItems,
+    familySearchDropdownItems,
+    forceDropdown
   };
+}
+
+function preferredDropdownItems(input: ComparisonFieldInput, preferred: PreferredValue): CardDropdownItem[] {
+  if (preferred.source === 'same' || preferred.source === 'new') {
+    return input.gedcomDropdownItems.length
+      ? input.gedcomDropdownItems
+      : textToDropdownItems(preferred.value);
+  }
+
+  if (preferred.source === 'missing') {
+    return input.familySearchDropdownItems.length
+      ? input.familySearchDropdownItems
+      : textToDropdownItems(preferred.value);
+  }
+
+  return textToDropdownItems(preferred.value);
 }
 
 function hasListedValue(value: string): boolean {
@@ -263,7 +337,7 @@ function choosePreferredValue(gedcomValue: string, familySearchValue: string): P
   if (!hasGedcom && !hasFamilySearch) {
     return {
       source: 'empty',
-      label: 'Empty',
+      label: 'Missing',
       value: EMPTY_VALUE
     };
   }
@@ -286,8 +360,8 @@ function choosePreferredValue(gedcomValue: string, familySearchValue: string): P
 
   if (!hasGedcom && hasFamilySearch) {
     return {
-      source: 'new',
-      label: 'New',
+      source: 'missing',
+      label: 'Missing',
       value: familySearchValue
     };
   }
@@ -325,7 +399,11 @@ function formatFacts(facts: FactView[] | undefined): string {
 }
 
 function formatOtherFacts(facts: FactView[] | undefined): string {
-  return formatFacts(facts?.filter((fact) => fact.label !== 'Marriage'));
+  return formatFacts(filterOtherFacts(facts));
+}
+
+function filterOtherFacts(facts: FactView[] | undefined): FactView[] {
+  return facts?.filter((fact) => fact.label !== 'Marriage') ?? [];
 }
 
 function formatFact(fact: FactView): string {

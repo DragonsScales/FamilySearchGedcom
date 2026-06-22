@@ -1,5 +1,20 @@
 <details [open]="open" (toggle)="onToggle($event)">
-  <summary>{{ title }} <span>{{ items.length }}</span></summary>
+  <summary>
+    <span class="summary-title">{{ title }}</span>
+    @if (badge) {
+    <span
+      class="source-chip"
+      [class.source-same]="badge.source === 'same'"
+      [class.source-new]="badge.source === 'new'"
+      [class.source-review]="badge.source === 'review'"
+      [class.source-missing]="badge.source === 'missing'"
+      [class.source-empty]="badge.source === 'empty'"
+    >
+      {{ badge.label }}
+    </span>
+    }
+    <span class="summary-count">{{ items.length }}</span>
+  </summary>
 
   @if (items.length) {
     @if (hasDetailedItems) {

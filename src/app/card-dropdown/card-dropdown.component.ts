@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import type {
+  CardDropdownBadge,
   CardDropdownItem,
   CardDropdownLine
 } from '../../Interfaces/card-dropdown.interface';
@@ -15,6 +16,7 @@ export class CardDropdownComponent {
   @Input() items: readonly CardDropdownItem[] = [];
   @Input() open = false;
   @Input() emptyText = 'Not listed';
+  @Input() badge: CardDropdownBadge | null = null;
 
   @Output() readonly openChange = new EventEmitter<boolean>();
 

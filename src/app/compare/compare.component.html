@@ -74,7 +74,7 @@
           <section class="comparison-cell">
             <fsg-card-dropdown
               [title]="field.label"
-              [items]="dropdownItems(field.gedcomValue)"
+              [items]="dropdownItems(field, 'gedcom')"
               [open]="field.defaultOpen"
             ></fsg-card-dropdown>
           </section>
@@ -82,7 +82,7 @@
           <section class="comparison-cell">
             <fsg-card-dropdown
               [title]="field.label"
-              [items]="dropdownItems(field.familySearchValue)"
+              [items]="dropdownItems(field, 'familySearch')"
               [open]="field.defaultOpen"
             ></fsg-card-dropdown>
           </section>
@@ -90,8 +90,9 @@
           <section class="comparison-cell review-cell">
             <fsg-card-dropdown
               [title]="field.label"
-              [items]="dropdownItems(field.preferred.value)"
+              [items]="dropdownItems(field, 'preferred')"
               [open]="field.defaultOpen"
+              [badge]="field.preferred"
             ></fsg-card-dropdown>
           </section>
         </div>
@@ -120,6 +121,7 @@
                   [class.source-same]="field.preferred.source === 'same'"
                   [class.source-new]="field.preferred.source === 'new'"
                   [class.source-review]="field.preferred.source === 'review'"
+                  [class.source-missing]="field.preferred.source === 'missing'"
                   [class.source-empty]="field.preferred.source === 'empty'"
                 >
                   {{ field.preferred.label }}
