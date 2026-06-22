@@ -19,6 +19,14 @@
         FamilySearch ID
         <span>Type or paste FamilySearch id</span>
       </label>
+      <label class="account-consent-row">
+        <input
+          type="checkbox"
+          [checked]="accountAccessConsent"
+          (change)="onAccountAccessConsentChange($event)"
+        >
+        <span>Use my FamilySearch account to open a person page and retrieve its information</span>
+      </label>
       <div class="id-input-row">
         <input
           id="familysearch-start-id"
@@ -31,7 +39,7 @@
           [value]="familySearchId"
           (input)="onFamilySearchIdInput($event)"
         >
-        <button type="submit" [disabled]="!isFamilySearchIdComplete || isRetrievingPerson">
+        <button type="submit" [disabled]="!isFamilySearchIdComplete || !accountAccessConsent || isRetrievingPerson">
           {{ isRetrievingPerson ? 'Retrieving...' : 'Retrieve Person' }}
         </button>
         <button type="button" class="ghost-button" (click)="clearMapping.emit()">Clear</button>

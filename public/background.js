@@ -288,8 +288,6 @@
   var EXTENSION_APP_URL = "index.html#/gedcom";
   var ALARM_CAPTURE_PAGE = "familysearchCollector.capturePage";
   var ALARM_NEXT_NAVIGATION = "familysearchCollector.nextNavigation";
-  var MIN_DELAY_MS = 1e3;
-  var MAX_DELAY_MS = 6e4;
   var PERSON_RETRIEVAL_TIMEOUT_MS = 3e4;
   function defaultState() {
     return {
@@ -302,7 +300,6 @@
       options: {
         maxPages: 25,
         maxPagesEnabled: false,
-        delayMs: 6e3,
         allowedIds: []
       },
       lastEvent: "Idle",
@@ -312,9 +309,8 @@
   function normalizeOptions(options = {}) {
     const maxPages = clampInteger(options.maxPages, 1, 500, 25);
     const maxPagesEnabled = options.maxPagesEnabled === true;
-    const delayMs = clampInteger(options.delayMs, MIN_DELAY_MS, MAX_DELAY_MS, 6e3);
     const allowedIds = Array.isArray(options.allowedIds) ? [...new Set(options.allowedIds.map(normalizePersonId).filter(Boolean))] : [];
-    return { maxPages, maxPagesEnabled, delayMs, allowedIds };
+    return { maxPages, maxPagesEnabled, allowedIds };
   }
   function clampInteger(value, min, max, fallback) {
     const parsed = Number.parseInt(String(value), 10);
@@ -454,12 +450,9 @@
     }
     const tab = await openTraversalStartTab(rootFamilySearchId);
     const existing = await loadState();
-    const payloadDelaySeconds = Number(payload.delaySeconds);
-    const payloadDelayMs = Number(payload.delayMs);
     const options = normalizeOptions({
       ...existing.options,
-      ...payload,
-      delayMs: Number.isFinite(payloadDelaySeconds) && payloadDelaySeconds > 0 ? payloadDelaySeconds * 1e3 : Number.isFinite(payloadDelayMs) && payloadDelayMs > 0 ? payloadDelayMs : existing.options.delayMs
+      ...payload
     });
     const state = await saveState({
       ...existing,
@@ -480,7 +473,7 @@
       matchStatus: "matched",
       matchNote: "Starting person mapping."
     });
-    scheduleNextNavigation(captured.options.delayMs);
+    scheduleNextNavigation();
     return summarizeState(captured);
   }
   async function loadMappedFamilySearchId() {
@@ -679,8 +672,8 @@
       lastEvent: `Captured ${currentPersonId ?? "page"} and queued ${queuedCount} GEDCOM-guided page(s); ${unmatchedCount} expected relative(s) need review.`
     };
   }
-  function scheduleNextNavigation(delayMs) {
-    scheduleTraversalAlarm(ALARM_NEXT_NAVIGATION, delayMs);
+  function scheduleNextNavigation() {
+    scheduleTraversalAlarm(ALARM_NEXT_NAVIGATION);
   }
   async function navigateNextQueued() {
     const state = await loadState();
@@ -723,12 +716,12 @@
     if (!tab.url?.startsWith("https://www.familysearch.org/")) return;
     loadState().then((state) => {
       if (!state.running || state.activeTabId !== tabId) return;
-      scheduleTraversalCapture(state.options.delayMs);
+      scheduleTraversalCapture();
     }).catch(() => {
     });
   });
-  function scheduleTraversalCapture(delayMs) {
-    scheduleTraversalAlarm(ALARM_CAPTURE_PAGE, delayMs);
+  function scheduleTraversalCapture() {
+    scheduleTraversalAlarm(ALARM_CAPTURE_PAGE);
   }
   async function captureActiveTraversalPage() {
     const state = await loadState();
@@ -738,13 +731,12 @@
       expectedFamilySearchId: state.activeItem?.personId,
       matchStatus: "matched"
     });
-    if (captured.running) scheduleNextNavigation(captured.options.delayMs);
+    if (captured.running) scheduleNextNavigation();
     return captured;
   }
-  function scheduleTraversalAlarm(name, delayMs) {
-    const delay = Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delayMs));
+  function scheduleTraversalAlarm(name) {
     chrome.alarms.clear(name, () => {
-      chrome.alarms.create(name, { when: Date.now() + delay });
+      chrome.alarms.create(name, { when: Date.now() });
     });
   }
   function clearTraversalAlarms() {

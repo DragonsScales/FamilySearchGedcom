@@ -58,6 +58,29 @@ h3 {
   text-transform: none;
 }
 
+.familysearch-id-form .account-consent-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  color: var(--muted);
+  font: 700 0.92rem/1.4 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.account-consent-row input {
+  width: 18px;
+  min-height: 18px;
+  margin-top: 1px;
+  accent-color: #173027;
+}
+
+.familysearch-id-form .account-consent-row span {
+  color: var(--muted);
+  font: inherit;
+}
+
 .id-input-row {
   display: grid;
   grid-template-columns: minmax(140px, 1fr) auto auto;

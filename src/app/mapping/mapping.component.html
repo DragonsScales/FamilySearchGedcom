@@ -28,9 +28,11 @@
     [familySearchId]="familySearchIdInput()"
     [isFamilySearchIdComplete]="isFamilySearchIdComplete()"
     [isRetrievingPerson]="isRetrievingFamilySearchPerson()"
+    [accountAccessConsent]="accountAccessConsent()"
     [errorMessage]="mappingErrorMessage()"
     [statusMessage]="mappingStatusMessage()"
     (familySearchIdChange)="onFamilySearchIdInput($event)"
+    (accountAccessConsentChange)="setAccountAccessConsent($event)"
     (retrievePerson)="retrieveFamilySearchPerson()"
     (clearMapping)="clearStartPersonMapping()"
   ></fsg-start-person-mapping>

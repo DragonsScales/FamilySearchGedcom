@@ -24,6 +24,7 @@ The project is intentionally read-only with respect to FamilySearch. It should n
 - FamilySearch collection should stay bounded, and user-started.
 - Angular routes use hash routing because extension pages do not have server fallback routing.
 - Chrome loads JavaScript files from the manifest, but the authored extension runtime source lives in TypeScript.
+- Do not make changes to js files without asking for permission first, the majority of them are auto generated.
 
 ## Current Architecture
 
@@ -155,7 +156,7 @@ The background worker is responsible for:
 
 - Opening the Angular extension page when the extension icon is clicked.
 - Coordinating capture/traversal messages.
-- Tracking queue, visited FamilySearch IDs, GEDCOM person IDs, active tab, records, limits, and delay.
+- Tracking queue, visited FamilySearch IDs, GEDCOM person IDs, active tab, records, and limits.
 - Loading the stored GEDCOM import and start-person mapping for GEDCOM-guided traversal.
 - Queueing only expected GEDCOM relatives: father, mother, GEDCOM-listed spouses, and children.
 - Storing placeholder records when an expected GEDCOM relative is missing or ambiguous in the visible FamilySearch relationships.

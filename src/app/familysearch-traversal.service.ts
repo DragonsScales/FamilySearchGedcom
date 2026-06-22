@@ -104,7 +104,6 @@ function normalizeCollectorOptions(value: unknown): FamilySearchCollectorOptions
   return {
     maxPages: getNumber(options['maxPages'], 25),
     maxPagesEnabled: getBoolean(options['maxPagesEnabled']),
-    delayMs: getNumber(options['delayMs'], 6000),
     allowedIds: getArray(options['allowedIds']).filter((item): item is string => typeof item === 'string')
   };
 }

@@ -48,7 +48,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
   readonly accountAccessConsent = signal(false);
   readonly maxPagesEnabled = signal(false);
   readonly maxPagesInput = signal('25');
-  readonly delaySecondsInput = signal('6');
   readonly settings = signal<CardSettings>({
     relationshipsOpen: false,
     residencesOpen: false,
@@ -125,8 +124,7 @@ export class TraversalComponent implements OnInit, OnDestroy {
         familySearchId,
         accountAccessConsent: this.accountAccessConsent(),
         maxPagesEnabled: this.maxPagesEnabled(),
-        maxPages: parsePositiveInteger(this.maxPagesInput(), 25),
-        delayMs: parseDelaySeconds(this.delaySecondsInput(), 6)
+        maxPages: parsePositiveInteger(this.maxPagesInput(), 25)
       });
       this.collectorState.set(state);
       this.actionStatusMessage.set(state.lastEvent);
@@ -183,10 +181,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
     this.maxPagesEnabled.set((event.target as HTMLInputElement).checked);
   }
 
-  setDelaySeconds(event: Event): void {
-    this.delaySecondsInput.set((event.target as HTMLInputElement).value);
-  }
-
   setAccountAccessConsent(event: Event): void {
     this.accountAccessConsent.set((event.target as HTMLInputElement).checked);
     this.actionErrorMessage.set('');
@@ -225,7 +219,6 @@ export class TraversalComponent implements OnInit, OnDestroy {
 
     this.maxPagesInput.set(String(state.options.maxPages));
     this.maxPagesEnabled.set(state.options.maxPagesEnabled);
-    this.delaySecondsInput.set(formatSeconds(state.options.delayMs));
     this.optionsLoaded = true;
   }
 }
@@ -233,16 +226,4 @@ export class TraversalComponent implements OnInit, OnDestroy {
 function parsePositiveInteger(value: string, fallback: number): number {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function parseDelaySeconds(value: string, fallbackSeconds: number): number {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) && parsed > 0
-    ? Math.round(parsed * 1000)
-    : fallbackSeconds * 1000;
-}
-
-function formatSeconds(delayMs: number): string {
-  const seconds = delayMs / 1000;
-  return Number.isInteger(seconds) ? String(seconds) : seconds.toFixed(1);
 }

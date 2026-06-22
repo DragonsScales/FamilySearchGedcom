@@ -35,7 +35,7 @@ Target user flow:
 - [x] Captured visible data from a FamilySearch person page.
 - [x] Extracted related FamilySearch IDs from visible page text/links.
 - [x] Navigated to related person pages by direct FamilySearch person URL.
-- [x] Added traversal queue, visited ID tracking, optional page limit, delay, and stop/reset controls.
+- [x] Added traversal queue, visited ID tracking, optional page limit, and stop/reset controls.
 - [x] Added JSON export for collected FamilySearch snapshots.
 - [x] Proved an extension-owned app page can serve as the control center while the extension still opens/navigates FamilySearch tabs and reads page data through content scripts.
 - [x] Built the first Angular extension app page for local GEDCOM upload.
@@ -136,7 +136,7 @@ Target user flow:
 - [ ] Test with pages where relationships are hidden, collapsed, or lazy-loaded.
 - [ ] Add robust handling for FamilySearch layout changes.
 - [ ] Add manual retry/skip controls during traversal.
-- [ ] Add rate/delay safeguards.
+- [ ] Add rate safeguards.
 - [ ] Document extension install/update workflow.
 
 ## Open Design Questions

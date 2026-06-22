@@ -7,7 +7,6 @@ import type {
 export interface FamilySearchCollectorOptions {
   maxPages: number;
   maxPagesEnabled: boolean;
-  delayMs: number;
   allowedIds: string[];
 }
 
@@ -70,5 +69,4 @@ export interface FamilySearchTraversalStartOptions {
   accountAccessConsent: boolean;
   maxPages: number;
   maxPagesEnabled: boolean;
-  delayMs: number;
 }

@@ -120,7 +120,6 @@ interface ChromeApi {
 interface CollectorOptions {
   maxPages: number;
   maxPagesEnabled: boolean;
-  delayMs: number;
   allowedIds: string[];
 }
 
@@ -130,8 +129,6 @@ interface CollectorOptionsInput {
   accountAccessConsent?: unknown;
   maxPages?: unknown;
   maxPagesEnabled?: unknown;
-  delayMs?: unknown;
-  delaySeconds?: unknown;
   allowedIds?: unknown;
 }
 
@@ -247,8 +244,6 @@ const START_PERSON_MAPPING_KEY = 'familySearchGedcomStartPersonMapping';
 const EXTENSION_APP_URL = 'index.html#/gedcom';
 const ALARM_CAPTURE_PAGE = 'familysearchCollector.capturePage';
 const ALARM_NEXT_NAVIGATION = 'familysearchCollector.nextNavigation';
-const MIN_DELAY_MS = 1000;
-const MAX_DELAY_MS = 60000;
 const PERSON_RETRIEVAL_TIMEOUT_MS = 30000;
 
 function defaultState(): CollectorState {
@@ -262,7 +257,6 @@ function defaultState(): CollectorState {
     options: {
       maxPages: 25,
       maxPagesEnabled: false,
-      delayMs: 6000,
       allowedIds: []
     },
     lastEvent: 'Idle',
@@ -273,12 +267,11 @@ function defaultState(): CollectorState {
 function normalizeOptions(options: CollectorOptionsInput = {}): CollectorOptions {
   const maxPages = clampInteger(options.maxPages, 1, 500, 25);
   const maxPagesEnabled = options.maxPagesEnabled === true;
-  const delayMs = clampInteger(options.delayMs, MIN_DELAY_MS, MAX_DELAY_MS, 6000);
   const allowedIds = Array.isArray(options.allowedIds)
     ? [...new Set(options.allowedIds.map(normalizePersonId).filter(Boolean))]
     : [];
 
-  return { maxPages, maxPagesEnabled, delayMs, allowedIds };
+  return { maxPages, maxPagesEnabled, allowedIds };
 }
 
 function clampInteger(value: unknown, min: number, max: number, fallback: number): number {
@@ -452,16 +445,9 @@ async function startTraversal(payload: CollectorOptionsInput = {}): Promise<Stat
 
   const tab = await openTraversalStartTab(rootFamilySearchId);
   const existing = await loadState();
-  const payloadDelaySeconds = Number(payload.delaySeconds);
-  const payloadDelayMs = Number(payload.delayMs);
   const options = normalizeOptions({
     ...existing.options,
-    ...payload,
-    delayMs: (Number.isFinite(payloadDelaySeconds) && payloadDelaySeconds > 0)
-      ? payloadDelaySeconds * 1000
-      : Number.isFinite(payloadDelayMs) && payloadDelayMs > 0
-        ? payloadDelayMs
-        : existing.options.delayMs
+    ...payload
   });
 
   const state = await saveState({
@@ -486,7 +472,7 @@ async function startTraversal(payload: CollectorOptionsInput = {}): Promise<Stat
     matchStatus: 'matched',
     matchNote: 'Starting person mapping.'
   });
-  scheduleNextNavigation(captured.options.delayMs);
+  scheduleNextNavigation();
   return summarizeState(captured);
 }
 
@@ -730,8 +716,8 @@ function enqueueGedcomExpectedRelatives(
   };
 }
 
-function scheduleNextNavigation(delayMs: number): void {
-  scheduleTraversalAlarm(ALARM_NEXT_NAVIGATION, delayMs);
+function scheduleNextNavigation(): void {
+  scheduleTraversalAlarm(ALARM_NEXT_NAVIGATION);
 }
 
 async function navigateNextQueued(): Promise<CollectorState> {
@@ -785,13 +771,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   loadState()
     .then((state) => {
       if (!state.running || state.activeTabId !== tabId) return;
-      scheduleTraversalCapture(state.options.delayMs);
+      scheduleTraversalCapture();
     })
     .catch(() => {});
 });
 
-function scheduleTraversalCapture(delayMs: number): void {
-  scheduleTraversalAlarm(ALARM_CAPTURE_PAGE, delayMs);
+function scheduleTraversalCapture(): void {
+  scheduleTraversalAlarm(ALARM_CAPTURE_PAGE);
 }
 
 async function captureActiveTraversalPage(): Promise<CollectorState> {
@@ -803,14 +789,13 @@ async function captureActiveTraversalPage(): Promise<CollectorState> {
     expectedFamilySearchId: state.activeItem?.personId,
     matchStatus: 'matched'
   });
-  if (captured.running) scheduleNextNavigation(captured.options.delayMs);
+  if (captured.running) scheduleNextNavigation();
   return captured;
 }
 
-function scheduleTraversalAlarm(name: string, delayMs: number): void {
-  const delay = Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delayMs));
+function scheduleTraversalAlarm(name: string): void {
   chrome.alarms.clear(name, () => {
-    chrome.alarms.create(name, { when: Date.now() + delay });
+    chrome.alarms.create(name, { when: Date.now() });
   });
 }
 

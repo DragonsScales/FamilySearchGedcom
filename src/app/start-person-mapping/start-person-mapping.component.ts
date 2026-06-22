@@ -13,10 +13,12 @@ export class StartPersonMappingComponent {
   @Input() familySearchId = '';
   @Input() isFamilySearchIdComplete = false;
   @Input() isRetrievingPerson = false;
+  @Input() accountAccessConsent = false;
   @Input() errorMessage = '';
   @Input() statusMessage = '';
 
   @Output() readonly familySearchIdChange = new EventEmitter<string>();
+  @Output() readonly accountAccessConsentChange = new EventEmitter<boolean>();
   @Output() readonly retrievePerson = new EventEmitter<void>();
   @Output() readonly clearMapping = new EventEmitter<void>();
 
@@ -25,5 +27,9 @@ export class StartPersonMappingComponent {
     const formatted = normalizeFamilySearchIdInput(input.value);
     input.value = formatted;
     this.familySearchIdChange.emit(formatted);
+  }
+
+  onAccountAccessConsentChange(event: Event): void {
+    this.accountAccessConsentChange.emit((event.target as HTMLInputElement).checked);
   }
 }

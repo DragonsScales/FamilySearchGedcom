@@ -110,9 +110,10 @@ h3 {
 }
 
 .field-grid {
-  display: grid;
-  grid-template-columns: minmax(140px, 0.7fr) repeat(2, minmax(150px, 1fr));
-  gap: 14px;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
 }
 
 label {
@@ -131,7 +132,10 @@ label {
 .limit-toggle {
   grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
-  min-height: 72px;
+}
+
+.max-pages-field {
+  width: min(100%, 180px);
 }
 
 .limit-toggle input {

@@ -1,0 +1,115 @@
+<article class="page">
+  <section class="hero">
+    <p class="eyebrow">Step 5</p>
+    <h2>Compare</h2>
+    <p>Review GEDCOM values beside captured FamilySearch values.</p>
+  </section>
+
+  @if (loadErrorMessage()) {
+  <section class="empty-state">
+    <p class="kicker">Compare Error</p>
+    <h3>Comparison data could not be loaded.</h3>
+    <p class="error">{{ loadErrorMessage() }}</p>
+  </section>
+  }
+
+  <section class="compare-toolbar">
+    <div>
+      <p class="kicker">Comparison Set</p>
+      @if (importedGedcom(); as gedcom) {
+      <h3>{{ gedcom.fileName }}</h3>
+      } @else {
+      <h3>No GEDCOM loaded.</h3>
+      }
+      <p>{{ comparisonRows().length }} people ready for comparison from {{ capturedCount() }} traversal record(s).</p>
+    </div>
+
+    <div class="actions">
+      <button
+        type="button"
+        class="secondary"
+        (click)="loadComparisonContext()"
+        [disabled]="isLoading()"
+      >
+        Refresh
+      </button>
+    </div>
+  </section>
+
+  @if (!importedGedcom()) {
+  <section class="empty-state">
+    <p class="kicker">No GEDCOM Loaded</p>
+    <h3>Upload a GEDCOM before comparing.</h3>
+    <a routerLink="/gedcom">Open GEDCOM</a>
+  </section>
+  } @else if (!comparisonRows().length) {
+  <section class="empty-state">
+    <p class="kicker">No Captured Matches</p>
+    <h3>Run traversal before comparing.</h3>
+    <a routerLink="/traversal">Open Traversal</a>
+  </section>
+  } @else {
+  <section class="comparison-list" aria-label="Comparison people">
+    @for (row of comparisonRows(); track row.id) {
+    <article class="comparison-row">
+      <header class="row-header">
+        <div>
+          <p class="kicker">{{ row.matchStatus }}</p>
+          <h3>{{ row.title }}</h3>
+          @if (row.matchNote) {
+          <p>{{ row.matchNote }}</p>
+          }
+        </div>
+      </header>
+
+      <div class="comparison-table">
+        <header class="comparison-head">
+          <div>
+            <p class="column-label">GEDCOM</p>
+            <strong>{{ row.gedcomReference }}</strong>
+          </div>
+          <div>
+            <p class="column-label">FamilySearch</p>
+            <strong>{{ row.familySearchReference }}</strong>
+          </div>
+          <div>
+            <p class="column-label">Review</p>
+            <strong>Guide</strong>
+          </div>
+        </header>
+
+        @for (field of row.fields; track field.label) {
+        <div class="comparison-field-row">
+          <section class="comparison-cell">
+            <p class="field-label">{{ field.label }}</p>
+            <p>{{ field.gedcomValue }}</p>
+          </section>
+
+          <section class="comparison-cell">
+            <p class="field-label">{{ field.label }}</p>
+            <p>{{ field.familySearchValue }}</p>
+          </section>
+
+          <section class="comparison-cell review-cell">
+            <p class="field-label review-label">
+              <span>{{ field.label }}</span>
+              <span
+                class="source-chip"
+                [class.source-same]="field.preferred.source === 'same'"
+                [class.source-new]="field.preferred.source === 'new'"
+                [class.source-review]="field.preferred.source === 'review'"
+                [class.source-empty]="field.preferred.source === 'empty'"
+              >
+                {{ field.preferred.label }}
+              </span>
+            </p>
+            <p>{{ field.preferred.value }}</p>
+          </section>
+        </div>
+        }
+      </div>
+    </article>
+    }
+  </section>
+  }
+</article>

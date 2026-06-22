@@ -34,6 +34,7 @@ export class MappingComponent implements OnInit {
   readonly storedMapping = signal<StoredStartPersonMapping | null>(null);
   readonly loadErrorMessage = signal('');
   readonly familySearchIdInput = signal('');
+  readonly accountAccessConsent = signal(false);
   readonly mappingStatusMessage = signal('');
   readonly mappingErrorMessage = signal('');
   readonly isRetrievingFamilySearchPerson = signal(false);
@@ -88,6 +89,11 @@ export class MappingComponent implements OnInit {
     this.retrievedFamilySearchPersonCard.set(null);
   }
 
+  setAccountAccessConsent(consent: boolean): void {
+    this.accountAccessConsent.set(consent);
+    this.mappingErrorMessage.set('');
+  }
+
   async retrieveFamilySearchPerson(): Promise<void> {
     const selectedPerson = this.startPerson();
     const familySearchId = this.normalizedFamilySearchId();
@@ -104,6 +110,11 @@ export class MappingComponent implements OnInit {
 
     if (!isValidFamilySearchId(familySearchId)) {
       this.mappingErrorMessage.set('FamilySearch IDs use seven letters or numbers, shown as XXXX-XXX.');
+      return;
+    }
+
+    if (!this.accountAccessConsent()) {
+      this.mappingErrorMessage.set('Confirm FamilySearch account access before retrieving this person.');
       return;
     }
 
