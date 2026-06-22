@@ -76,6 +76,7 @@
     "Naturalization",
     "Probate",
     "Occupation",
+    "National Origin",
     "Custom Event"
   ];
   var FACT_SECTION_STOPS = [
@@ -146,11 +147,11 @@
   }
   function inspectPageReadiness(expectedFamilySearchId) {
     const root = document.querySelector("main") ?? document.body;
-    const bodyText = cleanText(document.body?.innerText);
     const mainText = cleanText(root.innerText);
     const lines = textLines(root.innerText);
     const loadingSkeletonCount = countLoadingSkeletons(root);
-    const hasExpectedFamilySearchId = expectedFamilySearchId ? bodyText.toUpperCase().includes(expectedFamilySearchId) : false;
+    const activeFamilySearchId = extractPersonId(window.location.href);
+    const hasExpectedFamilySearchId = expectedFamilySearchId ? activeFamilySearchId === expectedFamilySearchId : false;
     const hasPersonHeading = hasVisiblePersonHeading(root, lines);
     const capturedFactCount = extractFacts(lines).length;
     const capturedRelationshipCount = extractRelationshipBlocks(lines, extractPersonId(window.location.href)).length;
@@ -164,7 +165,7 @@
       return readiness(false, "main content is empty", expectedFamilySearchId, hasExpectedFamilySearchId, loadingSkeletonCount);
     }
     if (expectedFamilySearchId && !hasExpectedFamilySearchId) {
-      return readiness(false, `expected ID ${expectedFamilySearchId} is not visible yet`, expectedFamilySearchId, hasExpectedFamilySearchId, loadingSkeletonCount);
+      return readiness(false, `expected ID ${expectedFamilySearchId} is not the active person page yet`, expectedFamilySearchId, hasExpectedFamilySearchId, loadingSkeletonCount);
     }
     if (loadingSkeletonCount > 0) {
       return readiness(false, `still showing ${loadingSkeletonCount} loading skeleton element(s)`, expectedFamilySearchId, hasExpectedFamilySearchId, loadingSkeletonCount);
@@ -464,12 +465,23 @@
     if (label === "Name") return [`Value: ${cleanPersonName(cleanedValues[0]) || cleanedValues[0]}`];
     if (label === "Sex") return [`Value: ${cleanedValues[0]}`];
     if (label === "Custom Event") {
-      return [
-        `Value: ${cleanedValues[0]}`,
-        ...toDatePlaceValues(cleanedValues.slice(1))
-      ];
+      return toCustomEventValues(cleanedValues);
     }
+    if (isValueOnlyFactLabel(label)) return cleanedValues.map((value) => `Value: ${value}`);
     return toDatePlaceValues(cleanedValues);
+  }
+  function toCustomEventValues(values) {
+    const [eventType, ...eventValues] = values;
+    if (!eventType) return [];
+    return [
+      `Type: ${eventType}`,
+      ...toEventDetailValues(eventValues)
+    ];
+  }
+  function toEventDetailValues(values) {
+    if (values.length === 0) return [];
+    if (!looksLikeDateValue(values[0])) return values.map((value) => `Value: ${value}`);
+    return toDatePlaceValues(values);
   }
   function toDatePlaceValues(values) {
     const [date, place, ...extraValues] = values;
@@ -478,6 +490,12 @@
       place ? `Place: ${place}` : "",
       ...extraValues.map((value) => `Value: ${value}`)
     ].filter(Boolean);
+  }
+  function isValueOnlyFactLabel(label) {
+    return /^(Occupation|National Origin)$/i.test(label);
+  }
+  function looksLikeDateValue(value) {
+    return /\b\d{3,4}\b/.test(value) || /^(living|deceased|unknown)$/i.test(value.trim());
   }
   function isFactNoise(value) {
     return /^(Last Changed:|Reason:|MORE$|ADD$)/i.test(value) || /^[A-Z]$/.test(value);

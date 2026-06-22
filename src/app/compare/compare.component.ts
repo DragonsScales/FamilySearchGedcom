@@ -5,6 +5,10 @@ import type {
   FamilySearchTraversalMetadata
 } from '../../Interfaces/familysearch-collector.interface';
 import type {
+  NormalizedGedcomDocument,
+  NormalizedGedcomFact
+} from '../../Interfaces/gedcom.interface';
+import type {
   FactView,
   PersonCard,
   RelatedPersonView
@@ -19,6 +23,11 @@ interface ComparisonField {
   label: string;
   gedcomValue: string;
   familySearchValue: string;
+  gedcomPreview: string;
+  familySearchPreview: string;
+  preferredPreview: string;
+  isCollapsible: boolean;
+  defaultOpen: boolean;
   preferred: PreferredValue;
 }
 
@@ -36,6 +45,12 @@ interface PreferredValue {
   source: 'same' | 'new' | 'review' | 'empty';
   label: string;
   value: string;
+}
+
+interface ComparisonFieldInput {
+  label: string;
+  gedcomValue: string;
+  familySearchValue: string;
 }
 
 const DEFAULT_CARD_SETTINGS = {
@@ -129,17 +144,25 @@ function buildComparisonRows(
         : formatMatchStatus(traversal?.matchStatus),
       matchStatus: formatMatchStatus(traversal?.matchStatus),
       matchNote: traversal?.matchNote ?? '',
-      fields: buildComparisonFields(gedcomCard, familySearchCard)
+      fields: buildComparisonFields(
+        gedcomCard,
+        familySearchCard,
+        importedGedcom.document,
+        gedcomPersonId
+      )
     };
   });
 }
 
 function buildComparisonFields(
   gedcomCard: PersonCard | null,
-  familySearchCard: PersonCard | null
+  familySearchCard: PersonCard | null,
+  document: NormalizedGedcomDocument,
+  gedcomPersonId: string
 ): ComparisonField[] {
   const fieldInputs = [
     fieldInput('Name', gedcomCard?.name, familySearchCard?.name),
+    fieldInput('Alt Name', formatLines(gedcomCard?.alternateNames), formatLines(familySearchCard?.alternateNames)),
     fieldInput('Gender', gedcomCard?.gender, familySearchCard?.gender),
     fieldInput('Birth Date', gedcomCard?.birth?.date, familySearchCard?.birth?.date),
     fieldInput('Birth Place', gedcomCard?.birth?.place, familySearchCard?.birth?.place),
@@ -150,30 +173,57 @@ function buildComparisonFields(
     fieldInput('Burial Date', gedcomCard?.burial?.date, familySearchCard?.burial?.date),
     fieldInput('Burial Place', gedcomCard?.burial?.place, familySearchCard?.burial?.place),
     fieldInput('Parents', formatRelatedPeople(gedcomCard?.parents), formatRelatedPeople(familySearchCard?.parents)),
+    fieldInput('Spouse', formatRelatedPeople(gedcomCard?.spouses), formatRelatedPeople(familySearchCard?.spouses)),
     fieldInput('Children', formatRelatedPeople(gedcomCard?.children), formatRelatedPeople(familySearchCard?.children)),
     fieldInput('Siblings', formatRelatedPeople(gedcomCard?.siblings), formatRelatedPeople(familySearchCard?.siblings)),
+    fieldInput(
+      'Marriage Date',
+      formatGedcomMarriageFacts(document, gedcomPersonId, 'date'),
+      formatFamilySearchMarriageFacts(familySearchCard?.otherFacts, 'date')
+    ),
+    fieldInput(
+      'Marriage Place',
+      formatGedcomMarriageFacts(document, gedcomPersonId, 'place'),
+      formatFamilySearchMarriageFacts(familySearchCard?.otherFacts, 'place')
+    ),
     fieldInput('Residences', formatFacts(gedcomCard?.residences), formatFacts(familySearchCard?.residences)),
-    fieldInput('Other', formatFacts(gedcomCard?.otherFacts), formatFacts(familySearchCard?.otherFacts))
+    fieldInput('Other', formatOtherFacts(gedcomCard?.otherFacts), formatOtherFacts(familySearchCard?.otherFacts))
   ];
 
-  return fieldInputs.map((input) => ({
-    label: input.label,
-    gedcomValue: input.gedcomValue,
-    familySearchValue: input.familySearchValue,
-    preferred: choosePreferredValue(input.gedcomValue, input.familySearchValue)
-  }));
+  return fieldInputs
+    .filter((input) => hasListedValue(input.gedcomValue) || hasListedValue(input.familySearchValue))
+    .map((input) => {
+      const preferred = choosePreferredValue(input.gedcomValue, input.familySearchValue);
+      return {
+        label: input.label,
+        gedcomValue: input.gedcomValue,
+        familySearchValue: input.familySearchValue,
+        gedcomPreview: firstLine(input.gedcomValue),
+        familySearchPreview: firstLine(input.familySearchValue),
+        preferredPreview: firstLine(preferred.value),
+        isCollapsible: hasMultipleLines(input.gedcomValue) ||
+          hasMultipleLines(input.familySearchValue) ||
+          hasMultipleLines(preferred.value),
+        defaultOpen: input.label !== 'Residences',
+        preferred
+      };
+    });
 }
 
-function fieldInput(label: string, gedcomValue: string | undefined, familySearchValue: string | undefined): {
-  label: string;
-  gedcomValue: string;
-  familySearchValue: string;
-} {
+function fieldInput(
+  label: string,
+  gedcomValue: string | undefined,
+  familySearchValue: string | undefined
+): ComparisonFieldInput {
   return {
     label,
     gedcomValue: normalizeDisplayValue(gedcomValue),
     familySearchValue: normalizeDisplayValue(familySearchValue)
   };
+}
+
+function hasListedValue(value: string): boolean {
+  return value !== EMPTY_VALUE;
 }
 
 function choosePreferredValue(gedcomValue: string, familySearchValue: string): PreferredValue {
@@ -231,13 +281,21 @@ function toComparableValue(value: string): string {
     .trim();
 }
 
+function formatLines(values: readonly (string | undefined)[] | undefined): string {
+  return normalizeDisplayValue(values?.map((value) => value?.trim()).filter(Boolean).join('\n'));
+}
+
 function formatRelatedPeople(people: RelatedPersonView[] | undefined): string {
-  return people?.map((person) => person.name).filter(Boolean).join(', ') || EMPTY_VALUE;
+  return formatLines(people?.map((person) => person.name));
 }
 
 function formatFacts(facts: FactView[] | undefined): string {
   const values = facts?.map(formatFact).filter(Boolean) ?? [];
-  return values.join('; ') || EMPTY_VALUE;
+  return formatLines(values);
+}
+
+function formatOtherFacts(facts: FactView[] | undefined): string {
+  return formatFacts(facts?.filter((fact) => fact.label !== 'Marriage'));
 }
 
 function formatFact(fact: FactView): string {
@@ -247,6 +305,45 @@ function formatFact(fact: FactView): string {
     fact.place,
     fact.value
   ].filter(Boolean).join(': ');
+}
+
+function formatGedcomMarriageFacts(
+  document: NormalizedGedcomDocument,
+  gedcomPersonId: string,
+  key: 'date' | 'place'
+): string {
+  const person = document.people.find((candidate) => candidate.id === gedcomPersonId);
+  if (!person) return EMPTY_VALUE;
+
+  const facts = person.spouseFamilyIds
+    .map((familyId) => document.families.find((family) => family.id === familyId))
+    .flatMap((family) => family?.facts ?? [])
+    .filter((fact) => fact.type === 'MARR');
+
+  return formatLines(facts.map((fact) => getFactPart(fact, key)));
+}
+
+function formatFamilySearchMarriageFacts(
+  facts: FactView[] | undefined,
+  key: 'date' | 'place'
+): string {
+  return formatLines(
+    facts
+      ?.filter((fact) => fact.label === 'Marriage')
+      .map((fact) => getFactPart(fact, key))
+  );
+}
+
+function getFactPart(fact: NormalizedGedcomFact | FactView, key: 'date' | 'place'): string | undefined {
+  return key === 'date' ? fact.date : fact.place;
+}
+
+function firstLine(value: string): string {
+  return value.split('\n')[0]?.trim() || EMPTY_VALUE;
+}
+
+function hasMultipleLines(value: string): boolean {
+  return value.includes('\n');
 }
 
 function formatMatchStatus(status: FamilySearchTraversalMetadata['matchStatus'] | undefined): string {

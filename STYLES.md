@@ -28,3 +28,6 @@ This file captures project-specific code style and organization rules that shoul
 - Do not load remote scripts or styles.
 - Do not automate writes back to FamilySearch.
 - Keep Chrome runtime source in TypeScript under `src/extension`; generated runtime JavaScript remains in `public/`.
+
+## Code
+- Prefer four spaces/tab per indentation

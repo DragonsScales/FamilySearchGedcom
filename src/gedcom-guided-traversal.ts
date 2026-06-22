@@ -50,13 +50,24 @@ interface ExpectedGedcomRelative {
   name: string;
   relationshipHint: GedcomTraversalRelationship;
   branch: GedcomTraversalBranch;
-  birthDate: string;
+  birthYear: string;
   trustRelationshipHint: boolean;
 }
 
 interface RelationshipMatchResult {
   relationship?: FamilySearchCapturedRelationship;
   status: GedcomTraversalMatchStatus;
+  note: string;
+}
+
+interface ExpectedRelationshipMatchResult {
+  expected: ExpectedGedcomRelative;
+  result: RelationshipMatchResult;
+}
+
+interface RelationshipAssignment {
+  expected: ExpectedGedcomRelative;
+  relationship: FamilySearchCapturedRelationship;
   note: string;
 }
 
@@ -74,43 +85,78 @@ export function buildGedcomTraversalRoute(input: GedcomTraversalRouteInput): Ged
     unmatched: []
   };
 
-  for (const expected of expectedRelatives) {
+  for (let index = 0; index < expectedRelatives.length; index += 1) {
+    const expected = expectedRelatives[index];
+    if (expected.relationshipHint === 'child') {
+      const childRelatives: ExpectedGedcomRelative[] = [];
+
+      while (index < expectedRelatives.length && expectedRelatives[index].relationshipHint === 'child') {
+        childRelatives.push(expectedRelatives[index]);
+        index += 1;
+      }
+
+      index -= 1;
+
+      for (const match of matchChildRelationships(
+        childRelatives.filter((child) => !seenGedcomIds.has(child.gedcomPersonId)),
+        childRelatives,
+        input.relationships,
+        matchedPageFamilySearchIds,
+        seenFamilySearchIds
+      )) {
+        applyMatchResult(match.expected, match.result, route, seenGedcomIds, seenFamilySearchIds, matchedPageFamilySearchIds);
+      }
+
+      continue;
+    }
+
     if (seenGedcomIds.has(expected.gedcomPersonId)) continue;
 
-    const result = matchRelationship(expected, input.relationships, matchedPageFamilySearchIds);
-    if (!result.relationship) {
-      route.unmatched.push({
-        status: result.status === 'ambiguous' ? 'ambiguous' : 'missing',
-        gedcomPersonId: expected.gedcomPersonId,
-        name: expected.name,
-        relationshipHint: expected.relationshipHint,
-        branch: expected.branch,
-        matchNote: result.note
-      });
-      seenGedcomIds.add(expected.gedcomPersonId);
-      continue;
-    }
+    const result = matchRelationship(expected, input.relationships, matchedPageFamilySearchIds, seenFamilySearchIds);
+    applyMatchResult(expected, result, route, seenGedcomIds, seenFamilySearchIds, matchedPageFamilySearchIds);
+  }
 
-    if (seenFamilySearchIds.has(result.relationship.personId)) {
-      seenGedcomIds.add(expected.gedcomPersonId);
-      continue;
-    }
+  return route;
+}
 
-    matchedPageFamilySearchIds.add(result.relationship.personId);
-    seenFamilySearchIds.add(result.relationship.personId);
-    seenGedcomIds.add(expected.gedcomPersonId);
-    route.matches.push({
-      status: 'matched',
+function applyMatchResult(
+  expected: ExpectedGedcomRelative,
+  result: RelationshipMatchResult,
+  route: GedcomTraversalRoute,
+  seenGedcomIds: Set<string>,
+  seenFamilySearchIds: Set<string>,
+  matchedPageFamilySearchIds: Set<string>
+): void {
+  if (!result.relationship) {
+    route.unmatched.push({
+      status: result.status === 'ambiguous' ? 'ambiguous' : 'missing',
       gedcomPersonId: expected.gedcomPersonId,
-      familySearchId: result.relationship.personId,
       name: expected.name,
       relationshipHint: expected.relationshipHint,
       branch: expected.branch,
       matchNote: result.note
     });
+    seenGedcomIds.add(expected.gedcomPersonId);
+    return;
   }
 
-  return route;
+  if (seenFamilySearchIds.has(result.relationship.personId)) {
+    seenGedcomIds.add(expected.gedcomPersonId);
+    return;
+  }
+
+  matchedPageFamilySearchIds.add(result.relationship.personId);
+  seenFamilySearchIds.add(result.relationship.personId);
+  seenGedcomIds.add(expected.gedcomPersonId);
+  route.matches.push({
+    status: 'matched',
+    gedcomPersonId: expected.gedcomPersonId,
+    familySearchId: result.relationship.personId,
+    name: expected.name,
+    relationshipHint: expected.relationshipHint,
+    branch: expected.branch,
+    matchNote: result.note
+  });
 }
 
 function buildExpectedGedcomRelatives(
@@ -250,7 +296,7 @@ function toExpectedRelative(
     name: getPrimaryName(person) || gedcomPersonId,
     relationshipHint,
     branch,
-    birthDate: getBirthDate(person),
+    birthYear: getBirthYear(person),
     trustRelationshipHint
   };
 }
@@ -268,16 +314,178 @@ function dedupeExpectedRelatives(relatives: ExpectedGedcomRelative[]): ExpectedG
   return deduped;
 }
 
+function matchChildRelationships(
+  expectedChildren: ExpectedGedcomRelative[],
+  familyExpectedChildren: ExpectedGedcomRelative[],
+  relationships: FamilySearchCapturedRelationship[],
+  matchedPageFamilySearchIds: Set<string>,
+  seenFamilySearchIds: Set<string>
+): ExpectedRelationshipMatchResult[] {
+  if (expectedChildren.length === 0) return [];
+
+  const childRelationships = getCandidateRelationships(
+    expectedChildren[0],
+    relationships,
+    matchedPageFamilySearchIds,
+    seenFamilySearchIds
+  );
+  const allChildRelationships = getRelationshipKindCandidates(expectedChildren[0], relationships);
+
+  if (childRelationships.length === 0) {
+    return expectedChildren.map((expected) => ({
+      expected,
+      result: {
+        status: 'missing',
+        note: 'No FamilySearch child relationship with a usable ID was found.'
+      }
+    }));
+  }
+
+  const assignments: RelationshipAssignment[] = [];
+  const assignedGedcomIds = new Set<string>();
+  const assignedFamilySearchIds = new Set<string>();
+  const appendAssignments = (newAssignments: RelationshipAssignment[]): void => {
+    for (const assignment of newAssignments) {
+      if (assignedGedcomIds.has(assignment.expected.gedcomPersonId)) continue;
+      if (assignedFamilySearchIds.has(assignment.relationship.personId)) continue;
+      assignments.push(assignment);
+      assignedGedcomIds.add(assignment.expected.gedcomPersonId);
+      assignedFamilySearchIds.add(assignment.relationship.personId);
+    }
+  };
+  const remainingExpected = (): ExpectedGedcomRelative[] => expectedChildren.filter((expected) => (
+    !assignedGedcomIds.has(expected.gedcomPersonId)
+  ));
+  const remainingRelationships = (): FamilySearchCapturedRelationship[] => childRelationships.filter((relationship) => (
+    !assignedFamilySearchIds.has(relationship.personId)
+  ));
+  const commonNameTokens = findMostCommonNameTokens([
+    ...familyExpectedChildren.map((expected) => expected.name),
+    ...allChildRelationships.map((relationship) => relationship.name)
+  ]);
+
+  appendAssignments(findUniqueAssignments(
+    remainingExpected(),
+    remainingRelationships(),
+    (expected, relationship) => exactNamesMatch(expected.name, relationship.name),
+    'Matched by full name.'
+  ));
+  appendAssignments(findUniqueAssignments(
+    remainingExpected(),
+    remainingRelationships(),
+    (expected, relationship) => namesShareComparableToken(expected.name, relationship.name, commonNameTokens),
+    'Matched by name token.'
+  ));
+  appendAssignments(findUniqueAssignments(
+    remainingExpected(),
+    remainingRelationships(),
+    (expected, relationship) => birthYearsMatch(expected.birthYear, relationship.context),
+    'Matched by birth year range.'
+  ));
+
+  const finalExpected = remainingExpected();
+  const finalRelationships = remainingRelationships();
+  if (finalExpected.length === 1 && finalRelationships.length === 1) {
+    appendAssignments([{
+      expected: finalExpected[0],
+      relationship: finalRelationships[0],
+      note: 'Matched the only remaining visible FamilySearch child.'
+    }]);
+  }
+
+  const assignmentByGedcomId = new Map(assignments.map((assignment) => [
+    assignment.expected.gedcomPersonId,
+    assignment
+  ]));
+
+  return expectedChildren.map((expected) => {
+    const assignment = assignmentByGedcomId.get(expected.gedcomPersonId);
+    if (assignment) {
+      return {
+        expected,
+        result: {
+          relationship: assignment.relationship,
+          status: 'matched',
+          note: assignment.note
+        }
+      };
+    }
+
+    const unusedRelationships = remainingRelationships();
+    const fullNameMatches = unusedRelationships.filter((relationship) => (
+      exactNamesMatch(expected.name, relationship.name)
+    ));
+    const nameTokenMatches = unusedRelationships.filter((relationship) => (
+      namesShareComparableToken(expected.name, relationship.name, commonNameTokens)
+    ));
+    const birthYearMatches = unusedRelationships.filter((relationship) => (
+      birthYearsMatch(expected.birthYear, relationship.context)
+    ));
+
+    if (fullNameMatches.length > 0 || nameTokenMatches.length > 0 || birthYearMatches.length > 0) {
+      return {
+        expected,
+        result: {
+          status: 'ambiguous',
+          note: 'Multiple FamilySearch child matches were found.'
+        }
+      };
+    }
+
+    return {
+      expected,
+      result: {
+        status: 'missing',
+        note: unusedRelationships.length === 0
+          ? 'No FamilySearch child relationship with a usable ID was found.'
+          : 'No FamilySearch child matched by name or birth year.'
+      }
+    };
+  });
+}
+
+function findUniqueAssignments(
+  expectedRelatives: ExpectedGedcomRelative[],
+  relationships: FamilySearchCapturedRelationship[],
+  matches: (expected: ExpectedGedcomRelative, relationship: FamilySearchCapturedRelationship) => boolean,
+  note: string
+): RelationshipAssignment[] {
+  const relationshipsByExpectedId = new Map<string, FamilySearchCapturedRelationship[]>();
+  const expectedIdsByRelationshipId = new Map<string, Set<string>>();
+
+  for (const expected of expectedRelatives) {
+    const matchingRelationships = relationships.filter((relationship) => matches(expected, relationship));
+    relationshipsByExpectedId.set(expected.gedcomPersonId, matchingRelationships);
+
+    for (const relationship of matchingRelationships) {
+      const expectedIds = expectedIdsByRelationshipId.get(relationship.personId) ?? new Set<string>();
+      expectedIds.add(expected.gedcomPersonId);
+      expectedIdsByRelationshipId.set(relationship.personId, expectedIds);
+    }
+  }
+
+  return expectedRelatives.flatMap((expected) => {
+    const matchingRelationships = relationshipsByExpectedId.get(expected.gedcomPersonId) ?? [];
+    if (matchingRelationships.length !== 1) return [];
+
+    const relationship = matchingRelationships[0];
+    if ((expectedIdsByRelationshipId.get(relationship.personId)?.size ?? 0) !== 1) return [];
+
+    return [{
+      expected,
+      relationship,
+      note
+    }];
+  });
+}
+
 function matchRelationship(
   expected: ExpectedGedcomRelative,
   relationships: FamilySearchCapturedRelationship[],
-  matchedPageFamilySearchIds: Set<string>
+  matchedPageFamilySearchIds: Set<string>,
+  seenFamilySearchIds: Set<string>
 ): RelationshipMatchResult {
-  const unusedRelationships = relationships.filter((relationship) => (
-    relationship.personId &&
-    !matchedPageFamilySearchIds.has(relationship.personId)
-  ));
-  const candidates = unusedRelationships.filter((relationship) => relationshipMatchesExpectedKind(expected, relationship));
+  const candidates = getCandidateRelationships(expected, relationships, matchedPageFamilySearchIds, seenFamilySearchIds);
 
   if (candidates.length === 0) {
     return {
@@ -294,30 +502,53 @@ function matchRelationship(
     };
   }
 
-  const firstNameMatches = candidates.filter((relationship) => (
-    normalizeFirstName(relationship.name) === normalizeFirstName(expected.name)
+  const commonNameTokens = findMostCommonNameTokens([
+    expected.name,
+    ...candidates.map((relationship) => relationship.name)
+  ]);
+  const fullNameMatches = candidates.filter((relationship) => (
+    exactNamesMatch(expected.name, relationship.name)
   ));
 
-  if (firstNameMatches.length === 1) {
+  if (fullNameMatches.length === 1) {
     return {
-      relationship: firstNameMatches[0],
+      relationship: fullNameMatches[0],
       status: 'matched',
-      note: 'Matched by first name.'
+      note: 'Matched by full name.'
     };
   }
 
-  const datePool = firstNameMatches.length > 1 ? firstNameMatches : candidates;
-  const birthDateMatches = datePool.filter((relationship) => birthDatesMatch(expected.birthDate, relationship.context));
+  const nameTokenPool = fullNameMatches.length > 1 ? fullNameMatches : candidates;
+  const nameTokenMatches = nameTokenPool.filter((relationship) => (
+    namesShareComparableToken(expected.name, relationship.name, commonNameTokens)
+  ));
 
-  if (birthDateMatches.length === 1) {
+  if (nameTokenMatches.length === 1) {
     return {
-      relationship: birthDateMatches[0],
+      relationship: nameTokenMatches[0],
       status: 'matched',
-      note: 'Matched by birth date.'
+      note: 'Matched by name token.'
     };
   }
 
-  if (firstNameMatches.length > 1 || birthDateMatches.length > 1) {
+  const birthYearPool = nameTokenMatches.length > 1
+    ? nameTokenMatches
+    : fullNameMatches.length > 1
+      ? fullNameMatches
+      : candidates;
+  const birthYearMatches = birthYearPool.filter((relationship) => (
+    birthYearsMatch(expected.birthYear, relationship.context)
+  ));
+
+  if (birthYearMatches.length === 1) {
+    return {
+      relationship: birthYearMatches[0],
+      status: 'matched',
+      note: 'Matched by birth year range.'
+    };
+  }
+
+  if (fullNameMatches.length > 1 || nameTokenMatches.length > 1 || birthYearMatches.length > 1) {
     return {
       status: 'ambiguous',
       note: `Multiple FamilySearch ${expected.relationshipHint} matches were found.`
@@ -326,8 +557,30 @@ function matchRelationship(
 
   return {
     status: 'missing',
-    note: `No FamilySearch ${expected.relationshipHint} matched by first name or birth date.`
+    note: `No FamilySearch ${expected.relationshipHint} matched by name or birth year.`
   };
+}
+
+function getCandidateRelationships(
+  expected: ExpectedGedcomRelative,
+  relationships: FamilySearchCapturedRelationship[],
+  matchedPageFamilySearchIds: Set<string>,
+  seenFamilySearchIds: Set<string>
+): FamilySearchCapturedRelationship[] {
+  return getRelationshipKindCandidates(expected, relationships).filter((relationship) => (
+    !matchedPageFamilySearchIds.has(relationship.personId) &&
+    !seenFamilySearchIds.has(relationship.personId)
+  ));
+}
+
+function getRelationshipKindCandidates(
+  expected: ExpectedGedcomRelative,
+  relationships: FamilySearchCapturedRelationship[]
+): FamilySearchCapturedRelationship[] {
+  return relationships.filter((relationship) => (
+    relationship.personId &&
+    relationshipMatchesExpectedKind(expected, relationship)
+  ));
 }
 
 function relationshipMatchesExpectedKind(
@@ -359,10 +612,10 @@ function isParentHint(hint: string): boolean {
   return hint.includes('parent') || hint.includes('father') || hint.includes('mother');
 }
 
-function birthDatesMatch(gedcomBirthDate: string, relationshipContext: string): boolean {
-  const gedcomYear = extractYear(gedcomBirthDate);
-  const relationshipYear = extractRelationshipBirthYear(relationshipContext);
-  return Boolean(gedcomYear && relationshipYear && gedcomYear === relationshipYear);
+function birthYearsMatch(gedcomBirthYear: string, relationshipContext: string): boolean {
+  const gedcomYear = Number(extractYear(gedcomBirthYear));
+  const relationshipYear = Number(extractRelationshipBirthYear(relationshipContext));
+  return Boolean(gedcomYear && relationshipYear && Math.abs(gedcomYear - relationshipYear) <= 1);
 }
 
 function extractRelationshipBirthYear(context: string): string {
@@ -385,16 +638,55 @@ function getPrimaryName(person: NormalizedGedcomPerson | undefined): string {
   return name.full;
 }
 
-function normalizeFirstName(value: string): string {
-  return String(value ?? '')
-    .trim()
-    .split(/\s+/)[0]
-    ?.replace(/[^A-Za-z]/g, '')
-    .toLowerCase() ?? '';
+function exactNamesMatch(firstName: string, secondName: string): boolean {
+  const firstTokens = normalizeNameTokens(firstName);
+  const secondTokens = normalizeNameTokens(secondName);
+  return firstTokens.length > 0 &&
+    firstTokens.length === secondTokens.length &&
+    firstTokens.every((token, index) => token === secondTokens[index]);
 }
 
-function getBirthDate(person: NormalizedGedcomPerson | undefined): string {
-  return findFact(person, 'BIRT')?.date ?? '';
+function namesShareComparableToken(
+  firstName: string,
+  secondName: string,
+  commonNameTokens: Set<string>
+): boolean {
+  const firstTokens = new Set(normalizeNameTokens(firstName).filter((token) => !commonNameTokens.has(token)));
+  return normalizeNameTokens(secondName).some((token) => (
+    !commonNameTokens.has(token) &&
+    firstTokens.has(token)
+  ));
+}
+
+function findMostCommonNameTokens(names: string[]): Set<string> {
+  const tokenCounts = new Map<string, number>();
+
+  for (const name of names) {
+    for (const token of new Set(normalizeNameTokens(name))) {
+      tokenCounts.set(token, (tokenCounts.get(token) ?? 0) + 1);
+    }
+  }
+
+  const highestCount = Math.max(0, ...tokenCounts.values());
+  if (highestCount <= 1) return new Set();
+
+  return new Set(
+    [...tokenCounts.entries()]
+      .filter(([, count]) => count === highestCount)
+      .map(([token]) => token)
+  );
+}
+
+function normalizeNameTokens(value: string): string[] {
+  return String(value ?? '')
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.replace(/[^A-Za-z]/g, '').toLowerCase())
+    .filter(Boolean);
+}
+
+function getBirthYear(person: NormalizedGedcomPerson | undefined): string {
+  return extractYear(findFact(person, 'BIRT')?.date ?? '');
 }
 
 function findFact(person: NormalizedGedcomPerson | undefined, type: string): NormalizedGedcomFact | undefined {

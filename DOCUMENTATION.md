@@ -24,7 +24,7 @@ The project is intentionally read-only with respect to FamilySearch. It should n
 - FamilySearch collection should stay bounded, and user-started.
 - Angular routes use hash routing because extension pages do not have server fallback routing.
 - Chrome loads JavaScript files from the manifest, but the authored extension runtime source lives in TypeScript.
-- Do not make changes to js files without asking for permission first, the majority of them are auto generated.
+- Do not make changes to JavaScript files without asking for permission first; most are auto-generated. During normal development, edit TypeScript only and let the user's `npm run build` retest step regenerate runtime JavaScript.
 
 ## Current Architecture
 
@@ -146,7 +146,9 @@ Those files are generated from TypeScript:
 - `src/extension/content-script.ts`
 - `src/extension/helpers.ts`
 
-Build them with:
+For source changes, edit these TypeScript files directly. Do not rebuild or manually edit the generated JavaScript in `public/` unless explicitly asked; the user's normal retest flow runs `npm run build`, which regenerates the runtime JavaScript.
+
+If a standalone runtime rebuild is explicitly needed, use:
 
 ```sh
 npm run extension:scripts

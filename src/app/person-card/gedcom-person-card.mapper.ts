@@ -55,6 +55,7 @@ export function buildGedcomPersonCards(
       christening: toFactView(findFact(person, 'CHR')),
       burial: toFactView(findFact(person, 'BURI')),
       parents: resolveRelatedPeople(person.relationships.parents, personById),
+      spouses: resolveRelatedPeople(person.relationships.spouses, personById),
       children: resolveRelatedPeople(person.relationships.children, personById),
       siblings: resolveRelatedPeople(person.relationships.siblings, personById),
       residences: person.facts.filter((fact) => fact.type === 'RESI').map(toRequiredFactView),

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import type {
+  ChromeStorageChangeCallback,
   ChromeStorageApi,
   ChromeStorageKeyRequest
 } from '../Interfaces/chrome-storage.interface';
@@ -46,6 +47,21 @@ export class ChromeStorageService {
       `Timed out removing ${key} from chrome.storage.local.`
     );
     await this.logSnapshot(`after removing ${key}`);
+  }
+
+  watchValue(key: string, onChange: (value: unknown) => void): () => void {
+    this.assertAvailable();
+    const onChanged = chrome.storage?.onChanged;
+    if (!onChanged) return () => undefined;
+
+    const listener: ChromeStorageChangeCallback = (changes, areaName) => {
+      if (areaName !== 'local') return;
+      if (!(key in changes)) return;
+      onChange(changes[key]?.newValue);
+    };
+
+    onChanged.addListener(listener);
+    return () => onChanged.removeListener(listener);
   }
 
   async getSnapshot(): Promise<Record<string, unknown>> {

@@ -69,4 +69,5 @@ export interface FamilySearchTraversalStartOptions {
   accountAccessConsent: boolean;
   maxPages: number;
   maxPagesEnabled: boolean;
+  resume?: boolean;
 }

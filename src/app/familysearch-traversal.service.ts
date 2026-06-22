@@ -31,10 +31,27 @@ export class FamilySearchTraversalService {
     return normalizeCollectorState(await this.chromeStorage.getValue(COLLECTOR_STATE_KEY));
   }
 
+  watchState(onChange: (state: FamilySearchCollectorState) => void): () => void {
+    return this.chromeStorage.watchValue(COLLECTOR_STATE_KEY, (value) => {
+      onChange(normalizeCollectorState(value));
+    });
+  }
+
   async startTraversal(options: FamilySearchTraversalStartOptions): Promise<FamilySearchCollectorState> {
     await this.sendMessage({
       type: 'START_TRAVERSAL',
       payload: options
+    });
+    return this.getState();
+  }
+
+  async resumeTraversal(options: FamilySearchTraversalStartOptions): Promise<FamilySearchCollectorState> {
+    await this.sendMessage({
+      type: 'START_TRAVERSAL',
+      payload: {
+        ...options,
+        resume: true
+      }
     });
     return this.getState();
   }

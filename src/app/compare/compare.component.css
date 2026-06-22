@@ -123,7 +123,9 @@ button:disabled {
 }
 
 .comparison-head,
-.comparison-field-row {
+.standard-field-row,
+.comparison-summary-row,
+.comparison-expanded-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -165,6 +167,43 @@ button:disabled {
   gap: 7px;
 }
 
+.comparison-summary-row {
+  cursor: pointer;
+  list-style: none;
+}
+
+.comparison-summary-row::-webkit-details-marker {
+  display: none;
+}
+
+.comparison-summary-row::marker {
+  content: "";
+}
+
+.collapsible-field-row[open] .comparison-summary-row {
+  border-bottom: 1px solid rgba(222, 210, 189, 0.72);
+}
+
+.collapsible-field-row[open] .field-preview {
+  display: none;
+}
+
+.collapsible-field-row .comparison-summary-row .comparison-cell:first-child .field-label::before {
+  content: ">";
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--cedar);
+  font: 900 0.72rem/1 ui-sans-serif, system-ui, sans-serif;
+  transform-origin: center;
+  transition: transform 140ms ease;
+}
+
+.collapsible-field-row[open] .comparison-summary-row .comparison-cell:first-child .field-label::before {
+  transform: rotate(90deg);
+}
+
 .field-label {
   display: flex;
   align-items: center;
@@ -185,6 +224,11 @@ button:disabled {
   font-size: 0.98rem;
   line-height: 1.38;
   overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.field-preview {
+  color: var(--muted);
 }
 
 .source-chip {
@@ -232,7 +276,9 @@ button:disabled {
 
 @media (max-width: 1180px) {
   .comparison-head,
-  .comparison-field-row {
+  .standard-field-row,
+  .comparison-summary-row,
+  .comparison-expanded-row {
     grid-template-columns: 1fr;
   }
 

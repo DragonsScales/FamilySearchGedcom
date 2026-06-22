@@ -20,8 +20,6 @@ import { buildFamilySearchPersonCards } from '../person-card/familysearch-person
 import { clearOverridesForSetting } from '../person-card/person-card-sections';
 import { PersonCardComponent } from '../person-card/person-card.component';
 
-const POLL_INTERVAL_MS = 3000;
-
 @Component({
   selector: 'fsg-traversal',
   standalone: true,
@@ -36,7 +34,7 @@ const POLL_INTERVAL_MS = 3000;
 export class TraversalComponent implements OnInit, OnDestroy {
   private readonly traversal = inject(FamilySearchTraversalService);
   private readonly storage = inject(ExtensionStorageService);
-  private refreshIntervalId: number | null = null;
+  private unsubscribeTraversalState: (() => void) | null = null;
   private optionsLoaded = false;
 
   readonly collectorState = signal<FamilySearchCollectorState | null>(null);
@@ -68,16 +66,23 @@ export class TraversalComponent implements OnInit, OnDestroy {
   readonly queuedCount = computed(() => this.collectorState()?.queue.length ?? 0);
   readonly visitedCount = computed(() => this.collectorState()?.visitedPersonIds.length ?? 0);
   readonly lastEvent = computed(() => this.collectorState()?.lastEvent ?? 'Idle');
+  readonly hasReusableTraversalData = computed(() => {
+    const state = this.collectorState();
+    return Boolean(state && (
+      state.records.length > 0 ||
+      state.queue.length > 0 ||
+      state.visitedPersonIds.length > 0 ||
+      state.activeItem
+    ));
+  });
 
   async ngOnInit(): Promise<void> {
+    this.watchTraversalState();
     await this.loadTraversalContext();
-    this.refreshIntervalId = window.setInterval(() => {
-      if (this.isRunning()) void this.refreshTraversalState({ silent: true });
-    }, POLL_INTERVAL_MS);
   }
 
   ngOnDestroy(): void {
-    if (this.refreshIntervalId !== null) window.clearInterval(this.refreshIntervalId);
+    this.unsubscribeTraversalState?.();
   }
 
   async loadTraversalContext(): Promise<void> {
@@ -104,6 +109,14 @@ export class TraversalComponent implements OnInit, OnDestroy {
   }
 
   async startTraversal(): Promise<void> {
+    await this.runTraversal('start');
+  }
+
+  async resumeTraversal(): Promise<void> {
+    await this.runTraversal('resume');
+  }
+
+  private async runTraversal(mode: 'start' | 'resume'): Promise<void> {
     const familySearchId = this.mappedFamilySearchId();
     if (!familySearchId) {
       this.actionErrorMessage.set('Save a FamilySearch starting person in Mapping before starting traversal.');
@@ -117,19 +130,26 @@ export class TraversalComponent implements OnInit, OnDestroy {
 
     this.isBusy.set(true);
     this.actionErrorMessage.set('');
-    this.actionStatusMessage.set(`Starting FamilySearch traversal from ${familySearchId}.`);
+    this.actionStatusMessage.set(
+      `${mode === 'resume' ? 'Resuming' : 'Starting'} FamilySearch traversal from ${familySearchId}.`
+    );
 
     try {
-      const state = await this.traversal.startTraversal({
+      const options = {
         familySearchId,
         accountAccessConsent: this.accountAccessConsent(),
         maxPagesEnabled: this.maxPagesEnabled(),
         maxPages: parsePositiveInteger(this.maxPagesInput(), 25)
-      });
+      };
+      const state = mode === 'resume'
+        ? await this.traversal.resumeTraversal(options)
+        : await this.traversal.startTraversal(options);
       this.collectorState.set(state);
       this.actionStatusMessage.set(state.lastEvent);
     } catch (error) {
-      this.actionErrorMessage.set(error instanceof Error ? error.message : 'Could not start FamilySearch traversal.');
+      this.actionErrorMessage.set(error instanceof Error
+        ? error.message
+        : `Could not ${mode === 'resume' ? 'resume' : 'start'} FamilySearch traversal.`);
       this.actionStatusMessage.set('');
     } finally {
       this.isBusy.set(false);
@@ -220,6 +240,14 @@ export class TraversalComponent implements OnInit, OnDestroy {
     this.maxPagesInput.set(String(state.options.maxPages));
     this.maxPagesEnabled.set(state.options.maxPagesEnabled);
     this.optionsLoaded = true;
+  }
+
+  private watchTraversalState(): void {
+    this.unsubscribeTraversalState = this.traversal.watchState((state) => {
+      this.collectorState.set(state);
+      this.loadOptionsFromState(state);
+      this.loadErrorMessage.set('');
+    });
   }
 }
 

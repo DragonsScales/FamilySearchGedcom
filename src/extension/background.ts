@@ -130,6 +130,7 @@ interface CollectorOptionsInput {
   maxPages?: unknown;
   maxPagesEnabled?: unknown;
   allowedIds?: unknown;
+  resume?: unknown;
 }
 
 interface RetrievePersonInput {
@@ -188,8 +189,11 @@ interface TraversalMetadata {
 interface CaptureMetadata {
   source?: string;
   expectedFamilySearchId?: string;
+  depth?: number;
+  fromPersonId?: string | null;
   gedcomPersonId?: string | null;
   fromGedcomPersonId?: string | null;
+  relationshipHint?: string | null;
   branch?: GedcomTraversalBranch;
   matchStatus?: 'matched' | 'missing' | 'ambiguous';
   matchNote?: string;
@@ -245,6 +249,7 @@ const EXTENSION_APP_URL = 'index.html#/gedcom';
 const ALARM_CAPTURE_PAGE = 'familysearchCollector.capturePage';
 const ALARM_NEXT_NAVIGATION = 'familysearchCollector.nextNavigation';
 const PERSON_RETRIEVAL_TIMEOUT_MS = 30000;
+let traversalCaptureInFlight = false;
 
 function defaultState(): CollectorState {
   return {
@@ -445,22 +450,26 @@ async function startTraversal(payload: CollectorOptionsInput = {}): Promise<Stat
 
   const tab = await openTraversalStartTab(rootFamilySearchId);
   const existing = await loadState();
+  const resumeExistingData = payload.resume === true;
   const options = normalizeOptions({
     ...existing.options,
     ...payload
   });
+  const records = resumeExistingData ? existing.records : [];
+  const queue = resumeExistingData ? existing.queue : [];
 
   const state = await saveState({
-    ...existing,
+    ...(resumeExistingData ? existing : defaultState()),
     running: true,
     activeTabId: tab.id,
     activeItem: null,
-    queue: [],
-    visitedPersonIds: existing.records
+    queue,
+    records,
+    visitedPersonIds: records
       .map((record) => record.person?.familySearchId)
       .filter((id): id is string => Boolean(id)),
     options,
-    lastEvent: `Traversal started from ${rootFamilySearchId} for GEDCOM ${getGedcomPersonName(rootGedcomPerson)}.`
+    lastEvent: `${resumeExistingData ? 'Traversal resumed' : 'Traversal started'} from ${rootFamilySearchId} for GEDCOM ${getGedcomPersonName(rootGedcomPerson)}.`
   });
 
   const captured = await captureAndStore(tab.id, {
@@ -524,9 +533,21 @@ async function stopTraversal(): Promise<StateSummary> {
     ...state,
     running: false,
     activeItem: null,
+    queue: requeueActiveItem(state),
     lastEvent: 'Traversal stopped.'
   });
   return summarizeState(stopped);
+}
+
+function requeueActiveItem(state: CollectorState): QueueItem[] {
+  if (!state.activeItem) return state.queue;
+
+  const activePersonId = state.activeItem.personId;
+  const alreadyVisited = state.visitedPersonIds.includes(activePersonId);
+  const alreadyQueued = state.queue.some((item) => item.personId === activePersonId);
+  if (alreadyVisited || alreadyQueued) return state.queue;
+
+  return [state.activeItem, ...state.queue];
 }
 
 async function resetCollector(): Promise<StateSummary> {
@@ -539,29 +560,32 @@ async function captureAndStore(
   tabId: number,
   metadata: CaptureMetadata = {}
 ): Promise<CollectorState> {
-  const response = await sendCaptureMessage(tabId, metadata.expectedFamilySearchId);
+  const preCaptureState = await loadState();
+  const expectedFamilySearchId = normalizePersonId(metadata.expectedFamilySearchId);
+  const response = await sendCaptureMessage(tabId, expectedFamilySearchId);
   if (!response.ok || !response.capture) {
     throw new Error(response.error ?? 'The active page could not be captured.');
   }
 
   const capture = response.capture;
+  assertExpectedCaptureMatches(expectedFamilySearchId, capture);
   const state = await loadState();
   const personId = capture.person?.familySearchId ?? null;
-  const activeDepth = state.activeItem?.depth ?? 0;
-  const gedcomPersonId = metadata.gedcomPersonId ?? state.activeItem?.gedcomPersonId ?? null;
-  const fromGedcomPersonId = metadata.fromGedcomPersonId ?? state.activeItem?.fromGedcomPersonId ?? null;
+  const activeDepth = metadata.depth ?? preCaptureState.activeItem?.depth ?? 0;
+  const gedcomPersonId = metadata.gedcomPersonId ?? preCaptureState.activeItem?.gedcomPersonId ?? null;
+  const fromGedcomPersonId = metadata.fromGedcomPersonId ?? preCaptureState.activeItem?.fromGedcomPersonId ?? null;
   const record: CaptureRecord = {
     ...capture,
     traversal: {
       source: metadata.source ?? 'manual',
       depth: activeDepth,
-      fromPersonId: state.activeItem?.fromPersonId ?? null,
+      fromPersonId: metadata.fromPersonId ?? preCaptureState.activeItem?.fromPersonId ?? null,
       gedcomPersonId,
       fromGedcomPersonId,
-      relationshipHint: state.activeItem?.relationshipHint ?? null,
-      branch: metadata.branch ?? state.activeItem?.branch ?? 'root',
+      relationshipHint: metadata.relationshipHint ?? preCaptureState.activeItem?.relationshipHint ?? null,
+      branch: metadata.branch ?? preCaptureState.activeItem?.branch ?? 'root',
       matchStatus: metadata.matchStatus ?? 'matched',
-      matchNote: metadata.matchNote ?? state.activeItem?.matchNote
+      matchNote: metadata.matchNote ?? preCaptureState.activeItem?.matchNote
     }
   };
 
@@ -594,6 +618,17 @@ async function captureAndStore(
   }
 
   return saveState(nextState);
+}
+
+function assertExpectedCaptureMatches(expectedFamilySearchId: string, capture: CaptureRecord): void {
+  if (!expectedFamilySearchId) return;
+
+  const capturedFamilySearchId = normalizePersonId(capture.person?.familySearchId);
+  if (capturedFamilySearchId === expectedFamilySearchId) return;
+
+  throw new Error(
+    `Expected FamilySearch page ${expectedFamilySearchId}, but captured ${capturedFamilySearchId || 'an unknown person'}.`
+  );
 }
 
 function upsertRecord(records: CaptureRecord[], record: CaptureRecord): CaptureRecord[] {
@@ -771,6 +806,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   loadState()
     .then((state) => {
       if (!state.running || state.activeTabId !== tabId) return;
+      if (!state.activeItem) return;
+      if (extractFamilySearchPersonIdFromUrl(tab.url ?? '') !== state.activeItem.personId) return;
       scheduleTraversalCapture();
     })
     .catch(() => {});
@@ -783,14 +820,30 @@ function scheduleTraversalCapture(): void {
 async function captureActiveTraversalPage(): Promise<CollectorState> {
   const state = await loadState();
   if (!state.running || !state.activeTabId) return state;
+  if (!state.activeItem) return state;
+  if (traversalCaptureInFlight) return state;
 
-  const captured = await captureAndStore(state.activeTabId, {
-    source: 'traversal',
-    expectedFamilySearchId: state.activeItem?.personId,
-    matchStatus: 'matched'
-  });
-  if (captured.running) scheduleNextNavigation();
-  return captured;
+  const activeItem = state.activeItem;
+  traversalCaptureInFlight = true;
+
+  try {
+    const captured = await captureAndStore(state.activeTabId, {
+      source: 'traversal',
+      expectedFamilySearchId: activeItem.personId,
+      depth: activeItem.depth,
+      fromPersonId: activeItem.fromPersonId,
+      gedcomPersonId: activeItem.gedcomPersonId,
+      fromGedcomPersonId: activeItem.fromGedcomPersonId,
+      relationshipHint: activeItem.relationshipHint,
+      branch: activeItem.branch,
+      matchStatus: 'matched',
+      matchNote: activeItem.matchNote
+    });
+    if (captured.running) scheduleNextNavigation();
+    return captured;
+  } finally {
+    traversalCaptureInFlight = false;
+  }
 }
 
 function scheduleTraversalAlarm(name: string): void {

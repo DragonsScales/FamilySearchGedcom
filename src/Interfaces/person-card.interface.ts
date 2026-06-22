@@ -39,6 +39,7 @@ export interface PersonCard {
   christening?: FactView;
   burial?: FactView;
   parents: RelatedPersonView[];
+  spouses: RelatedPersonView[];
   children: RelatedPersonView[];
   siblings: RelatedPersonView[];
   residences: FactView[];

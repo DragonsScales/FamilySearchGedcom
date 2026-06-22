@@ -54,6 +54,7 @@ export function buildFamilySearchPersonCard(
     christening: findFactView(factViews, 'Christening'),
     burial: findFactView(factViews, 'Burial'),
     parents: toRelatedPeople(person.relationships, ['parent', 'mother', 'father']),
+    spouses: toRelatedPeople(person.relationships, ['spouse', 'wife', 'husband']),
     children: toRelatedPeople(person.relationships, ['child', 'son', 'daughter']),
     siblings: toRelatedPeople(person.relationships, ['sibling', 'brother', 'sister']),
     residences: factViews.filter((fact) => fact.label === 'Residence'),
@@ -137,12 +138,14 @@ function buildSections(
 }
 
 function toFactView(fact: FamilySearchCapturedFact): FactView {
+  const label = getFactLabel(fact);
+
   return {
     type: fact.type,
-    label: fact.type,
-    date: findFactValue(fact.values, 'Date'),
+    label,
+    date: getFactDate(fact),
     place: findFactValue(fact.values, 'Place'),
-    value: fact.values.join(' | ') || fact.rawText,
+    value: getFactDisplayValue(fact),
     notes: fact.rawText ? [fact.rawText] : []
   };
 }
@@ -155,6 +158,49 @@ function findFactValue(values: string[], label: string): string | undefined {
   const prefix = `${label}:`;
   const match = values.find((value) => value.toLowerCase().startsWith(prefix.toLowerCase()));
   return match?.slice(prefix.length).trim() || undefined;
+}
+
+function findFactValues(values: string[], label: string): string[] {
+  const prefix = `${label}:`;
+  return values
+    .filter((value) => value.toLowerCase().startsWith(prefix.toLowerCase()))
+    .map((value) => value.slice(prefix.length).trim())
+    .filter(Boolean);
+}
+
+function getFactLabel(fact: FamilySearchCapturedFact): string {
+  if (fact.type !== 'Custom Event') return fact.type;
+  return findFactValue(fact.values, 'Type') ?? findFactValue(fact.values, 'Value') ?? fact.type;
+}
+
+function getFactDate(fact: FamilySearchCapturedFact): string | undefined {
+  const date = findFactValue(fact.values, 'Date');
+  if (!date) return undefined;
+  if (isValueOnlyFact(fact) && !looksLikeDateValue(date)) return undefined;
+  return date;
+}
+
+function getFactDisplayValue(fact: FamilySearchCapturedFact): string | undefined {
+  const values = findFactValues(fact.values, 'Value');
+  const date = findFactValue(fact.values, 'Date');
+
+  if (fact.type === 'Custom Event') {
+    if (findFactValue(fact.values, 'Type')) return values.join(' | ') || undefined;
+    if (date && !looksLikeDateValue(date)) return date;
+    return undefined;
+  }
+
+  if (values.length > 0) return values.join(' | ');
+  if (date && isValueOnlyFact(fact) && !looksLikeDateValue(date)) return date;
+  return undefined;
+}
+
+function isValueOnlyFact(fact: FamilySearchCapturedFact): boolean {
+  return /^(Custom Event|Occupation|National Origin)$/i.test(fact.type);
+}
+
+function looksLikeDateValue(value: string): boolean {
+  return /\b\d{3,4}\b/.test(value) || /^(living|deceased|unknown)$/i.test(value.trim());
 }
 
 function toRelatedPeople(

@@ -86,18 +86,18 @@
       <button
         type="button"
         class="secondary"
-        (click)="stopTraversal()"
-        [disabled]="isBusy() || !isRunning()"
+        (click)="resumeTraversal()"
+        [disabled]="isBusy() || isRunning() || !mappedFamilySearchId() || !accountAccessConsent() || !hasReusableTraversalData()"
       >
-        Stop
+        Resume
       </button>
       <button
         type="button"
         class="secondary"
-        (click)="refreshTraversalState()"
-        [disabled]="isBusy()"
+        (click)="stopTraversal()"
+        [disabled]="isBusy() || !isRunning()"
       >
-        Refresh
+        Stop
       </button>
       <button
         type="button"
