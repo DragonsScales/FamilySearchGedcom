@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import type {
   CardSettingKey,
   CardSettings
@@ -36,6 +36,7 @@ import { StorageDebugPanelComponent } from '../storage-debug-panel/storage-debug
 export class GedcomResultsComponent implements OnInit {
   private readonly storage = inject(ExtensionStorageService);
   private readonly chromeStorage = inject(ChromeStorageService);
+  private readonly router = inject(Router);
 
   readonly importedGedcom = signal<StoredGedcomImport | null>(null);
   readonly loadErrorMessage = signal('');
@@ -123,27 +124,31 @@ export class GedcomResultsComponent implements OnInit {
     }));
   }
 
-  selectStartPerson(person: PersonCard): void {
+  async selectStartPerson(person: PersonCard): Promise<void> {
     this.selectedStartPersonId.set(person.id);
     this.mappingErrorMessage.set('');
     this.mappingStatusMessage.set(`${person.name} is selected as the GEDCOM starting person.`);
-    void this.saveStartPersonMapping(person);
+    const saved = await this.saveStartPersonMapping(person);
+    if (saved) await this.router.navigate(['/mapping']);
   }
 
-  async saveStartPersonMapping(selectedPerson: PersonCard): Promise<void> {
+  async saveStartPersonMapping(selectedPerson: PersonCard): Promise<boolean> {
     if (!this.importedGedcom()) {
       this.mappingErrorMessage.set('Choose a GEDCOM starting person first.');
-      return;
+      return false;
     }
 
     const existingMapping = await this.storage.getStartPersonMapping();
-    const familySearchId = existingMapping?.gedcomPersonId === selectedPerson.id
-      ? existingMapping.familySearchId
-      : '';
+    const reusableMapping = existingMapping?.gedcomPersonId === selectedPerson.id
+      ? existingMapping
+      : null;
 
     const mapping: StoredStartPersonMapping = {
       gedcomPersonId: selectedPerson.id,
-      familySearchId,
+      familySearchId: reusableMapping?.familySearchId ?? '',
+      ...(reusableMapping?.retrievedFamilySearchPerson
+        ? { retrievedFamilySearchPerson: reusableMapping.retrievedFamilySearchPerson }
+        : {}),
       updatedAt: new Date().toISOString()
     };
 
@@ -152,8 +157,10 @@ export class GedcomResultsComponent implements OnInit {
       this.mappingStatusMessage.set(`Saved ${selectedPerson.name} as the GEDCOM starting person.`);
       this.mappingErrorMessage.set('');
       await this.refreshStorageDebugPanel();
+      return true;
     } catch (error) {
       this.mappingErrorMessage.set(error instanceof Error ? error.message : 'Could not save the starting person mapping.');
+      return false;
     }
   }
 

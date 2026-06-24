@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import type { CardSettings } from '../../Interfaces/card-settings.interface';
+import type { FamilySearchRetrievedPerson } from '../../Interfaces/familysearch-person.interface';
 import type { PersonCard } from '../../Interfaces/person-card.interface';
 import type {
   StoredGedcomImport,
@@ -24,6 +25,7 @@ import { StartPersonMappingComponent } from '../start-person-mapping/start-perso
 export class MappingComponent implements OnInit {
   private readonly storage = inject(ExtensionStorageService);
   private readonly familySearchPerson = inject(FamilySearchPersonService);
+  private readonly router = inject(Router);
   private readonly defaultCardSettings: CardSettings = {
     relationshipsOpen: false,
     residencesOpen: false,
@@ -68,16 +70,24 @@ export class MappingComponent implements OnInit {
         importedGedcom.document.people.some((person) => person.id === mapping.gedcomPersonId)
       );
 
+      const validMapping = hasMappedPerson && mapping ? mapping : null;
+
       this.importedGedcom.set(importedGedcom);
-      this.storedMapping.set(hasMappedPerson ? mapping : null);
-      this.familySearchIdInput.set(hasMappedPerson && mapping ? normalizeFamilySearchIdInput(mapping.familySearchId) : '');
+      this.storedMapping.set(validMapping);
+      this.familySearchIdInput.set(validMapping ? normalizeFamilySearchIdInput(validMapping.familySearchId) : '');
+      this.retrievedFamilySearchPersonCard.set(
+        validMapping?.retrievedFamilySearchPerson
+          ? buildFamilySearchPersonCard(validMapping.retrievedFamilySearchPerson)
+          : null
+      );
       this.loadErrorMessage.set('');
       this.mappingErrorMessage.set('');
-      this.mappingStatusMessage.set(getInitialMappingStatus(importedGedcom, hasMappedPerson ? mapping : null));
+      this.mappingStatusMessage.set(getInitialMappingStatus(importedGedcom, validMapping));
     } catch (error) {
       this.importedGedcom.set(null);
       this.storedMapping.set(null);
       this.familySearchIdInput.set('');
+      this.retrievedFamilySearchPersonCard.set(null);
       this.loadErrorMessage.set(error instanceof Error ? error.message : 'Could not load the saved mapping context.');
     }
   }
@@ -127,7 +137,8 @@ export class MappingComponent implements OnInit {
       const retrievedFamilySearchId = normalizeFamilySearchIdInput(retrievedPerson.familySearchId);
       this.familySearchIdInput.set(retrievedFamilySearchId);
       this.retrievedFamilySearchPersonCard.set(buildFamilySearchPersonCard(retrievedPerson));
-      await this.saveStartPersonMapping(selectedPerson, retrievedFamilySearchId);
+      const saved = await this.saveStartPersonMapping(selectedPerson, retrievedFamilySearchId, retrievedPerson);
+      if (saved) await this.router.navigate(['/traversal']);
     } catch (error) {
       this.retrievedFamilySearchPersonCard.set(null);
       this.mappingErrorMessage.set(error instanceof Error ? error.message : 'Could not retrieve the FamilySearch person.');
@@ -137,10 +148,15 @@ export class MappingComponent implements OnInit {
     }
   }
 
-  private async saveStartPersonMapping(selectedPerson: PersonCard, familySearchId: string): Promise<void> {
+  private async saveStartPersonMapping(
+    selectedPerson: PersonCard,
+    familySearchId: string,
+    retrievedFamilySearchPerson: FamilySearchRetrievedPerson
+  ): Promise<boolean> {
     const mapping: StoredStartPersonMapping = {
       gedcomPersonId: selectedPerson.id,
       familySearchId,
+      retrievedFamilySearchPerson,
       updatedAt: new Date().toISOString()
     };
 
@@ -149,8 +165,10 @@ export class MappingComponent implements OnInit {
       this.storedMapping.set(mapping);
       this.mappingStatusMessage.set(`Saved ${selectedPerson.name} as ${familySearchId}.`);
       this.mappingErrorMessage.set('');
+      return true;
     } catch (error) {
       this.mappingErrorMessage.set(error instanceof Error ? error.message : 'Could not save the starting person mapping.');
+      return false;
     }
   }
 
@@ -174,6 +192,9 @@ function getInitialMappingStatus(
 ): string {
   if (!importedGedcom) return 'Upload a GEDCOM file before mapping.';
   if (!mapping) return 'Select a GEDCOM starting person from Results before saving a FamilySearch ID.';
+  if (mapping.retrievedFamilySearchPerson) {
+    return `Loaded saved FamilySearch person ${normalizeFamilySearchIdInput(mapping.familySearchId)}.`;
+  }
   if (mapping.familySearchId) return `Loaded saved FamilySearch ID ${normalizeFamilySearchIdInput(mapping.familySearchId)}.`;
   return 'Loaded the saved GEDCOM starting person. Paste the matching FamilySearch ID.';
 }

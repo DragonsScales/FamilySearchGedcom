@@ -1,4 +1,5 @@
 import type { NormalizedGedcomDocument } from './gedcom.interface';
+import type { FamilySearchRetrievedPerson } from './familysearch-person.interface';
 
 export interface StoredGedcomImport {
   fileName: string;
@@ -10,5 +11,6 @@ export interface StoredGedcomImport {
 export interface StoredStartPersonMapping {
   gedcomPersonId: string;
   familySearchId: string;
+  retrievedFamilySearchPerson?: FamilySearchRetrievedPerson;
   updatedAt: string;
 }

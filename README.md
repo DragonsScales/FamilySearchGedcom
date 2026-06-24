@@ -37,3 +37,12 @@ npm run typecheck
 3. Enable Developer Mode.
 4. Click Load unpacked.
 5. Select `/FamilySearchGedcom/extension/familysearch-collector`.
+
+
+# FamilySearch and GEDCOM file Comparison
+
+Chrome extension designed for comparing a gedcom file with the public FamilySearch tree from https://FamilySearch.org.
+
+
+## Use
+CREATE BUILD!!!

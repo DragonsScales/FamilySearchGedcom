@@ -110,6 +110,7 @@ Important keys:
 
 - `gedcomImport`: The uploaded and normalized GEDCOM import.
 - `familySearchGedcomStartPersonMapping`: The selected GEDCOM starting person and optional FamilySearch ID.
+  After a FamilySearch person is retrieved, this mapping also keeps the retrieved person snapshot so the mapping route can rebuild the saved card after navigation.
 - `familySearchGedcomCollectorState`: Background traversal/capture state from the extension runtime.
 
 The results route includes a collapsible storage debug panel to inspect both typed import loading and raw extension storage.
@@ -120,6 +121,7 @@ The results page currently lets the user:
 
 - Pick a GEDCOM person card as the starting person.
 - Persist that GEDCOM starting person to extension storage.
+- Automatically continue to the mapping route after the starting person is saved.
 
 The mapping route currently lets the user:
 
@@ -127,7 +129,10 @@ The mapping route currently lets the user:
 - Enter the ID without the dash; the UI formats it as `XXXX-XXX`.
 - Retrieve the exact FamilySearch person details URL for that ID through the extension background worker.
 - Display the retrieved FamilySearch person as a reusable person card.
-- Persist the mapping to extension storage after retrieval succeeds.
+- Persist the mapping and retrieved FamilySearch snapshot to extension storage after retrieval succeeds.
+- Automatically continue to the traversal route after the mapping is saved.
+
+The GEDCOM upload route also automatically continues to the results route after a new GEDCOM file is parsed and stored.
 
 FamilySearch IDs are treated as seven alphanumeric characters displayed as four characters, a dash, then three characters.
 

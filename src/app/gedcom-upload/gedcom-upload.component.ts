@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import type { StoredGedcomImport } from '../../Interfaces/storage.interface';
 import { ExtensionStorageService } from '../extension-storage.service';
 import { parseGedcomText } from './gedcom-parser';
@@ -14,6 +14,7 @@ import { parseGedcomText } from './gedcom-parser';
 })
 export class GedcomUploadComponent implements OnInit {
   private readonly storage = inject(ExtensionStorageService);
+  private readonly router = inject(Router);
 
   readonly importedGedcom = signal<StoredGedcomImport | null>(null);
   readonly errorMessage = signal('');
@@ -48,6 +49,7 @@ export class GedcomUploadComponent implements OnInit {
 
       await this.storage.replaceGedcomImport(importedGedcom);
       this.importedGedcom.set(importedGedcom);
+      await this.router.navigate(['/results']);
     } catch (error) {
       this.errorMessage.set(error instanceof Error ? error.message : 'Could not parse this GEDCOM file.');
     } finally {
