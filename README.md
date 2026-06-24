@@ -1,48 +1,7 @@
-# FamilySearch GEDCOM Compare
-
-Local-first Angular/WebExtension tooling to compare a GEDCOM file against read-only FamilySearch tree data gathered through a normal logged-in browser session.
-
-See `DOCUMENTATION.md` for a medium-level architecture overview, `PROJECT_CHECKLIST.md` for the current end-to-end plan and implementation checklist, and `STYLES.md` for TypeScript and Angular organization rules.
-
-## Current Architecture
-
-- The user logs in, handles 2FA, and browses FamilySearch in a normal browser session.
-- The Chrome extension action opens the Angular app page at `index.html#/gedcom`.
-- The Angular app uses hash routing so extension URLs work without server fallback.
-- The GEDCOM upload page parses and stores normalized GEDCOM JSON locally in extension storage.
-- The results page currently shows GEDCOM-only review cards, with room for FamilySearch and Other comparison columns later.
-- The extension background worker and content script remain read-only and user-controlled.
-- Extension runtime source lives in `src/extension/*.ts`; `npm run extension:scripts` emits the Chrome-required JavaScript files into `public/`.
-- Playwright was removed because FamilySearch blocked Playwright-launched/custom automation browser sessions.
-
-## Scripts
-
-```sh
-nvm use
-npm install
-npm run extension:build
-npm run extension:check
-npm run gedcom:convert -- --input "Wilson Family Tree.ged"
-npm run typecheck
-```
-
-`npm run extension:build` builds the Angular app into `extension/familysearch-collector`. Load that folder unpacked in Chrome.
-
-`npm run gedcom:convert -- --input "Wilson Family Tree.ged"` writes normalized GEDCOM JSON to `.local/gedcom.normalized.json`.
-
-## Extension Install
-
-1. Run `npm run extension:build`.
-2. Open `chrome://extensions`.
-3. Enable Developer Mode.
-4. Click Load unpacked.
-5. Select `/FamilySearchGedcom/extension/familysearch-collector`.
-
-
 # FamilySearch and GEDCOM file Comparison
 
 Chrome extension designed for comparing a gedcom file with the public FamilySearch tree from https://FamilySearch.org.
 
 
 ## Installation
-Press the green "Code" button at the top of this page and select "Download ZIP". When it's finished, go to your downloads folder, right click, and press extract contents. If you want to, move the extracted contents to a new location, such as Documents (so it doesn't get accidentally deleted). Then, go to Google Chrome and enter chrome://extensions. In the top right, turn on Developer mode and click Load Unpacked from the new menu that comes up. Navigate to the folder the extracted folder is in, go into src, then extension, then 
+Press the green "Code" button at the top of this page and select "Download ZIP". When it's finished, go to your downloads folder, right click, and press extract contents. If you want to, move the extracted contents to a new location, such as Documents (so it doesn't get accidentally deleted). Then, go to Google Chrome and enter chrome://extensions. In the top right, turn on Developer mode and click Load Unpacked from the new menu that comes up. Navigate to the folder the extracted folder is in, it should say FamilySearchGedcom as part of its name, and open extension, then select familysearch-collector. If you can't find this folder, use your file explorer and search for "familysearch-collector" it may take a while. After that's done, press the puzzle icon in the top right of chrome to access the extension!
